@@ -45,7 +45,6 @@ def _connect_lsl(config_receiver):
         try:
             inlet = StreamInlet(stream, config_receiver.fs)
             _, timestamp = inlet.pull_sample(timeout=1)
-            print('got ', timestamp)
             if timestamp:
                 return inlet
         except TimeoutError:

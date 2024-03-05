@@ -45,6 +45,10 @@ class GeneralConfig:
 class PatientInfoConfig:
     patient_name: str
     patient_date: str
+    patient_hospital: str
+    patient_history_id: str
+    patient_hospitalization_date: str
+
 
     def __post_init__(self):
         self._type = 'patient_info'
@@ -279,9 +283,16 @@ def read_config_file(path='config.ini'):
 def parse_config(em, config):
     patient_name = config['patient_info']['patient_name']
     patient_date = config['patient_info']['patient_date']
+    patient_hospital =  config['patient_info']['patient_hospital']
+    patient_history_id = config['patient_info']['patient_history_id']
+    patient_hospitalization_date = config['patient_info']['patient_hospitalization_date']
     patient_info_config = PatientInfoConfig(
         patient_name=patient_name,
-        patient_date=patient_date)
+        patient_date=patient_date,
+        patient_hospital=patient_hospital,
+        patient_history_id=patient_history_id,
+        patient_hospitalization_date=patient_hospitalization_date,
+    )
     patient_info_config.set_events_handlers(em)
 
     # control_type = config['general'].getint('control_type')

@@ -51,34 +51,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.create_menu_bar()
 
         self.control_widget = self.create_control_widget()
-
-        # self.canvas_ecog = scene.SceneCanvas(keys='interactive')
-
         self.timeseries = TimeSeriesCanvas(self.em, self.config)
         self.canvas_pictures = PicturesCanvas(self.em, self.config)
-        # self.view_ecog = self.canvas_ecog.central_widget.add_view()
-        # self.view_ecog.add(scene.Line(np.random.normal(size=(100, 2)), parent=self.view_ecog.scene, color='blue'))
-
-        # self.canvas_spectrum = scene.SceneCanvas(keys='interactive')
-        # self.view_spectrum = self.canvas_spectrum.central_widget.add_view()
-        # self.view_spectrum.add(
-        #     scene.Line(np.random.normal(size=(100, 2)), parent=self.view_spectrum.scene, color='blue'))
-
         self.sound = SoundCanvas(self.em, self.config)
-        # self.view_sound = self.canvas_sound.central_widget.add_view()
-        # self.view_sound.add(scene.Line(np.random.normal(size=(100, 2)), parent=self.view_sound.scene, color='blue'))
-
-        # self.canvas_results_chart = scene.SceneCanvas(keys='interactive')
         self.canvas_results_summary = ResultsSummaryCanvasWrapper(self.em, self.config)
-        # self.view_results_chart = self.canvas_results_chart.central_widget.add_view()
-        # self.view_results_chart.add(
-        #     scene.Line(np.random.normal(size=(100, 2)), parent=self.view_results_chart.scene, color='blue'))
-
         self.canvas_results_raster = scene.SceneCanvas(keys='interactive')
         self.view_results_raster = self.canvas_results_raster.central_widget.add_view()
-        # self.view_results_raster.add(
-        #     scene.Line(np.random.normal(size=(100, 2)), parent=self.view_results_raster.scene, color='blue'))
-
 
         layout_brain = QtWidgets.QHBoxLayout()
         layout_brain.setContentsMargins(0,0,0,0) ### Clean?
@@ -97,18 +75,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.em.register_handler('update config.recorder.channels_bad', self._update_parameters)
         # self.em.register_handler('update brain_checkbox_height', self.update_brain_checkbox_height)
 
-        # self.widget_brain_checkbox_tab = QtWidgets.QTabWidget()
-        # self.widget_brain_checkbox_tab.addTab(self.widget_brain_checkbox, "Goods")
-
-        # update_layout_brain_height
-        # self.widget_brain_checkbox.setFixedHeight(1000)
-
         widget_splitter_timeseries = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
-        # layout_brain.addWidget(widget_checkboxes)
-        # layout_brain.addWidget(list_widget)
-
-        # widget_results = QtWidgets.QTabWidget()
-        # widget_results.addTab(self.canvas_raster_start.native, "Start")
         splitter_checkboxes_ecog = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter_checkboxes_ecog.addWidget(self.widget_brain_checkbox)
         splitter_checkboxes_ecog.addWidget(self.timeseries.canvas.native)
@@ -122,7 +89,6 @@ class MainWindow(QtWidgets.QMainWindow):
         size_brain = int(widget_splitter_timeseries.size().width() * 0.8)
         size_sound = widget_splitter_timeseries.size().width() - size_brain
         widget_splitter_timeseries.setSizes([size_brain, size_sound])
-        #widget_splitter_timeseries.setContentsMargins(30,30,30,30)
 
         widget_splitter_images = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
         widget_results = QtWidgets.QTabWidget()
@@ -147,7 +113,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Добавляем логотип
         logo_label = QtWidgets.QLabel()
-        logo_icon = QIcon("../resource/icons/spmap.svg").pixmap(40, 40)
+        logo_icon = QIcon(str(self.config.paths.resource_path) + "/icons/spmap.svg").pixmap(40, 40)
         logo_label.setPixmap(logo_icon)
 
         # Создаем QLabel для текста "Server"
@@ -295,7 +261,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def create_menu_bar(self):
         menu_bar = self.menuBar()
-
         style_sheet = """
             QMenuBar {
                 background-color: #D9D9D9;
@@ -303,15 +268,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 height: 54px;
             }
         """
-        
- 
-
         toolbar = QToolBar("My main toolbar")
         toolbar.setIconSize(QtCore.QSize(56, 56))
         self.addToolBar(toolbar)
 
-        
-        button_action = QAction(QIcon("brain.svg"), "&Your button", self)
+        button_action = QAction(QIcon(str(self.config.paths.resource_path) + "/icons/brain.svg"), "&Your button", self)
         button_action.setStatusTip("This is your button")
         #button_action.triggered.connect(self.onMyToolBarButtonClick)
         button_action.setCheckable(True)
@@ -372,6 +333,7 @@ class MainWindow(QtWidgets.QMainWindow):
         icon_label = QtWidgets.QLabel()
         icon_label.setPixmap(QtGui.QPixmap(icon_path))
 
+        menu_bar.setStyleSheet(style_sheet)
         # Create the "File" menu
         file_menu = menu_bar.addMenu("File")
 
@@ -449,33 +411,33 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         #Можно переделать в экземпляры класса Icon(QtWidgets.QPushButton, name): self.path = resource_path + name
         start_icon = QtWidgets.QPushButton()
-        start_icon.setIcon(QIcon(icons_path + "start.svg"))
+        start_icon.setIcon(QIcon(str(self.config.paths.resource_path) + "/icons/start.svg"))
         start_icon.setIconSize(QtCore.QSize(30, 30))    
         start_icon.clicked.connect(lambda: icon_clicked(start_icon))
         #start_icon.setStyleSheet("border-top: 1px solid black;border-bottom: 1px solid black; background-color: none;")
         start_icon.setFixedSize(QtCore.QSize(40,40))
 
         receiver_icon = QtWidgets.QPushButton()
-        receiver_icon.setIcon(QIcon(icons_path + "receiver.svg"))
+        receiver_icon.setIcon(QIcon(str(self.config.paths.resource_path) + "/icons/receiver.svg"))
         receiver_icon.setIconSize(QtCore.QSize(30, 30))    
         receiver_icon.clicked.connect(lambda: icon_clicked(receiver_icon))
         receiver_icon.setFixedSize(QtCore.QSize(40,40))
 
 
         settings_icon = QtWidgets.QPushButton()
-        settings_icon.setIcon(QIcon(icons_path + "settings.svg"))
+        settings_icon.setIcon(QIcon(str(self.config.paths.resource_path) + "/icons/settings.svg"))
         settings_icon.setIconSize(QtCore.QSize(30, 30))    
         settings_icon.clicked.connect(lambda: icon_clicked(settings_icon))
         settings_icon.setFixedSize(QtCore.QSize(40,40))
 
         patient_icon = QtWidgets.QPushButton()
-        patient_icon.setIcon(QIcon(icons_path + "user.svg"))
+        patient_icon.setIcon(QIcon(str(self.config.paths.resource_path) + "/icons/user.svg"))
         patient_icon.setIconSize(QtCore.QSize(30, 30))    
         patient_icon.clicked.connect(lambda: icon_clicked(patient_icon))
         patient_icon.setFixedSize(QtCore.QSize(40,40))
 
         eloq_icon = QtWidgets.QPushButton()
-        eloq_icon.setIcon(QIcon(icons_path + "eloq.svg"))
+        eloq_icon.setIcon(QIcon(str(self.config.paths.resource_path) + "/icons/eloq.svg"))
         eloq_icon.setIconSize(QtCore.QSize(30, 30))    
         eloq_icon.clicked.connect(lambda: icon_clicked(eloq_icon))
       
@@ -575,10 +537,6 @@ class MainWindow(QtWidgets.QMainWindow):
         separator = QtWidgets.QFrame()
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         layout_receiver.addWidget(separator)
-
-        # label_receiver = QtWidgets.QLabel("Receiver")
-        # label_receiver.setObjectName("receiver_label")
-        # layout_receiver.addWidget(label_receiver)
 
         button_generator_lsl = QtWidgets.QPushButton("GeneratorLSL")
         button_generator_lsl.setCheckable(True)
@@ -745,17 +703,6 @@ class MainWindow(QtWidgets.QMainWindow):
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         layout_experiment.addWidget(separator)
 
-        # label_experiment = QtWidgets.QLabel("Experiment")
-        # label_experiment.setObjectName("experiment_label")
-        # layout_experiment.addWidget(label_experiment)
-        #
-        # button_experiment_parameters = QtWidgets.QPushButton("Parameters")
-        # button_experiment_parameters.setObjectName("button_experiment_parameters")
-        # button_experiment_parameters.clicked.connect(
-        #     partial(self.handle_button_experiment_parameters_clicked, button_experiment_parameters, widget_experiment)
-        # )
-        # layout_experiment.addWidget(button_experiment_parameters)
-
         layout_selection_split = QtWidgets.QFormLayout()
         widget_selection_split = QtWidgets.QWidget()
         widget_selection_split.setLayout(layout_selection_split)
@@ -770,10 +717,10 @@ class MainWindow(QtWidgets.QMainWindow):
         selection_split.currentTextChanged.connect(
             partial(self.handle_selection_split_currentTextChanged, selection_split)
         )
-        self.em.register_handler('update selection split', partial(self._reset_selection_split, selection_split))
-        self.em.trigger('update selection split')
-        self.em.trigger('update local.splits_values', self.stimulus)
-        layout_selection_split.addRow("split", selection_split)
+        # self.em.register_handler('update selection split', partial(self._reset_selection_split, selection_split))
+        # self.em.trigger('update selection split')
+        # self.em.trigger('update local.splits_values', self.stimulus)
+        # layout_selection_split.addRow("split", selection_split)
 
         button_experiment_start = QtWidgets.QPushButton("Start")
         button_experiment_start.setObjectName("start_button")
@@ -797,27 +744,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return widget_experiment
 
-    def _reset_selection_split(self, selection_split, args):
-        selection_split.blockSignals(True)
-        selection_split.clear()
-        for i in range(self.config.experiment.n_splits):
-            selection_split.addItem(str(i+1))
-        selection_split.blockSignals(False)
-        selection_split.setCurrentText('1')
-        self.handle_selection_split_currentTextChanged(selection_split)
+    # def _reset_selection_split(self, selection_split, args):
+    #     selection_split.blockSignals(True)
+    #     selection_split.clear()
+    #     for i in range(self.config.experiment.n_splits):
+    #         selection_split.addItem(str(i+1))
+    #     selection_split.blockSignals(False)
+    #     selection_split.setCurrentText('1')
+    #     self.handle_selection_split_currentTextChanged(selection_split)
 
-    def handle_button_experiment_parameters_clicked(self, button, widget):
-        experiment_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
-        experiment_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-        x = widget.geometry().x() + widget.geometry().width()
-        y = widget.geometry().y() - 100
-        # y = button.geometry().y()# + int(select_channels_window.geometry().height() / 2)
-        experiment_parameters_window.move(x, y)
-        experiment_parameters_window.setWindowFlags(
-            experiment_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-        experiment_parameters_window.setWindowFlags(
-            experiment_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-        experiment_parameters_window.exec()
+    # def handle_button_experiment_parameters_clicked(self, button, widget):
+    #     experiment_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
+    #     experiment_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
+    #     x = widget.geometry().x() + widget.geometry().width()
+    #     y = widget.geometry().y() - 100
+    #     # y = button.geometry().y()# + int(select_channels_window.geometry().height() / 2)
+    #     experiment_parameters_window.move(x, y)
+    #     experiment_parameters_window.setWindowFlags(
+    #         experiment_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
+    #     experiment_parameters_window.setWindowFlags(
+    #         experiment_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
+    #     experiment_parameters_window.exec()
 
     def handle_selection_split_currentTextChanged(self, selection_split):
         self.em.trigger('update local.split', int(selection_split.currentText())-1)
@@ -1523,7 +1470,8 @@ class ExperimentWindow(QtWidgets.QDialog):
         self.stimulus = stimulus
         self.canvas_pictures = canvas_pictures
         self.timer = QtCore.QTimer(self)
-        
+        self.timer_experiment = None
+
         layout_experiment = QtWidgets.QVBoxLayout()
         self.setLayout(layout_experiment)
         self.setWindowTitle("ELOQ Settings")
@@ -1558,7 +1506,7 @@ class ExperimentWindow(QtWidgets.QDialog):
         button_experiment_start.setCheckable(True)
 
         if not self.experiment.process:
-            button_experiment_start.setStyleSheet("") 
+            button_experiment_start.setStyleSheet("")
             button_experiment_start.setChecked(False)
             button_experiment_start.setText("Connect")
         else:
@@ -1583,31 +1531,31 @@ class ExperimentWindow(QtWidgets.QDialog):
             label.setStyleSheet("color: red")
 
 
-    def _reset_selection_split(self, selection_split, args):
-        selection_split.blockSignals(True)
-        selection_split.clear()
-        for i in range(self.config.experiment.n_splits):
-            selection_split.addItem(str(i+1))
-        selection_split.blockSignals(False)
-        selection_split.setCurrentText('1')
-        self.handle_selection_split_currentTextChanged(selection_split)
+    # def _reset_selection_split(self, selection_split, args):
+    #     selection_split.blockSignals(True)
+    #     selection_split.clear()
+    #     for i in range(self.config.experiment.n_splits):
+    #         selection_split.addItem(str(i+1))
+    #     selection_split.blockSignals(False)
+    #     selection_split.setCurrentText('1')
+    #     self.handle_selection_split_currentTextChanged(selection_split)
 
-    def handle_button_experiment_parameters_clicked(self, button, widget):
-        experiment_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
-        experiment_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-        x = widget.geometry().x() + widget.geometry().width()
-        y = widget.geometry().y() - 100
-        # y = button.geometry().y()# + int(select_channels_window.geometry().height() / 2)
-        experiment_parameters_window.move(x, y)
-        experiment_parameters_window.setWindowFlags(
-            experiment_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-        experiment_parameters_window.setWindowFlags(
-            experiment_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-        experiment_parameters_window.exec()
+    # def handle_button_experiment_parameters_clicked(self, button, widget):
+    #     experiment_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
+    #     experiment_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
+    #     x = widget.geometry().x() + widget.geometry().width()
+    #     y = widget.geometry().y() - 100
+    #     # y = button.geometry().y()# + int(select_channels_window.geometry().height() / 2)
+    #     experiment_parameters_window.move(x, y)
+    #     experiment_parameters_window.setWindowFlags(
+    #         experiment_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
+    #     experiment_parameters_window.setWindowFlags(
+    #         experiment_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
+    #     experiment_parameters_window.exec()
 
-    def handle_selection_split_currentTextChanged(self, selection_split):
-        self.em.trigger('update local.split', int(selection_split.currentText())-1)
-        print('update local.split', int(selection_split.currentText())-1)
+    # def handle_selection_split_currentTextChanged(self, selection_split):
+    #     self.em.trigger('update local.split', int(selection_split.currentText())-1)
+    #     print('update local.split', int(selection_split.currentText())-1)
 
     def handle_button_experiment_start(self, button, layout, checked):
         if checked:
@@ -1624,17 +1572,30 @@ class ExperimentWindow(QtWidgets.QDialog):
                 if(queue.empty()): return
                 self.experiment.connection_status = True
                 data = queue.get(block = False)
+
+                def update_patient(patient):
+                    self.em.trigger('update config.patient_info.patient_name', patient.name)
+                    self.em.trigger('update config.patient_info.patient_date', patient.birthDate)
+                    self.em.trigger('update config.patient_info.patient_hospital', patient.hospital)
+                    self.em.trigger('update config.patient_info.patient_history_id', patient.historyID)
+                    self.em.trigger('update config.patient_info.patient_hospitalization_date', patient.hospitalizationDate)
+                    #self.em.trigger('save_config', None)
+                    print('Пациент добавлен',self.config.patient_info)
+
+                if(data.__class__.__name__== 'PatientData'):
+                    update_patient(data)
+                    return
+
                 if(self.receiver):
                     self.canvas_pictures.update_image(data)
-                    #self.receiver.stimulus_check(data)
                     self.receiver.queue_put(data)
                 else:
                     self.canvas_pictures.update_image(data)
 
             self.timer_experiment.timeout.connect(
-                lambda: put_experiment_data(self.experiment.queue_output)) 
+                lambda: put_experiment_data(self.experiment.queue_output))
             self.timer_experiment.start(1)
-        
+
         else:
             #self.experiment = None
             self.experiment.process.terminate()
@@ -1656,7 +1617,6 @@ class ExperimentWindow(QtWidgets.QDialog):
             #self.timer_experiment = None
 
 
-
 class PatientWindow(QtWidgets.QDialog):
     def __init__(self, config, em):
         super().__init__()
@@ -1664,10 +1624,10 @@ class PatientWindow(QtWidgets.QDialog):
         self.em = em
 
         layout_patient_info = QtWidgets.QVBoxLayout()
-        #widget_patient_info = QtWidgets.QWidget()
+        # widget_patient_info = QtWidgets.QWidget()
         self.setLayout(layout_patient_info)
         self.setWindowTitle("Patient Settings")
-        
+
         separator = QtWidgets.QFrame()
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         layout_patient_info.addWidget(separator)
@@ -1677,13 +1637,26 @@ class PatientWindow(QtWidgets.QDialog):
 
         layout_patient_values = QtWidgets.QFormLayout()
         widget_patient_values = QtWidgets.QWidget()
-        widget_patient_values.setLayout(layout_patient_values) 
+
+        widget_patient_values.setLayout(layout_patient_values)
         layout_patient_info.addWidget(widget_patient_values)
 
         line_patient_name = QtWidgets.QLineEdit()
-        line_patient_name.setText(str(self.config.patient_info.patient_name))
+        line_patient_name.setText(str(self.config.patient_info.patient_name))  # (self.config.patient_info.patient_name)
         line_patient_name.textChanged.connect(partial(self.handle_patient_name_textChanged, line_patient_name))
-        layout_patient_values.addRow("patient name", line_patient_name)
+
+        line_patient_birth_date = QtWidgets.QLineEdit(str(self.config.patient_info.patient_date))
+        line_patient_hospital = QtWidgets.QLineEdit(str(self.config.patient_info.patient_hospital))
+
+        line_patient_historyID = QtWidgets.QLineEdit(str(self.config.patient_info.patient_history_id))
+        line_patient_hospitalization_date = QtWidgets.QLineEdit(
+            str(self.config.patient_info.patient_hospitalization_date))
+
+        layout_patient_values.addRow("name", line_patient_name)
+        layout_patient_values.addRow("birth date", line_patient_birth_date)
+        layout_patient_values.addRow("hospital", line_patient_hospital)
+        layout_patient_values.addRow("historyID", line_patient_historyID)
+        layout_patient_values.addRow("hospitalization date", line_patient_hospitalization_date)
 
         line_patient_data_path = QtWidgets.QLineEdit()
         line_patient_data_path.setText(str(self.config.paths.patient_data_path))
