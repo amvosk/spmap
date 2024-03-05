@@ -6,6 +6,7 @@ import json
 import logging
 
 import starlette
+import starlette.websockets
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,10 @@ class BaseHandler(ABC):
                 return
 
             if request.action not in self.cmds:
-                logger.error(f"Unknown action {request.action}")
+            #     logger.error(f"Unknown action {request.action}")
                 return
 
-            response = self.callbacks[request.action](
-                self._parse_request_body(request))
+            response = self.callbacks[request.action](self._parse_request_body(request))
             if response:
                 await self._send(response)
 
@@ -52,7 +52,9 @@ class BaseHandler(ABC):
 
     async def _receive(self) -> Message:
         data = await self.websocket.receive_text()
-        return Message.parse_obj(json.loads(data))
+        message = Message.model_validate(json.loads(data))
+        print(message.action)
+        return message
 
     @abstractmethod
     async def _parse_request_body(self, msg: Message) -> Any:

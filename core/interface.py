@@ -1530,33 +1530,6 @@ class ExperimentWindow(QtWidgets.QDialog):
             label.setText("Disconnected")
             label.setStyleSheet("color: red")
 
-
-    # def _reset_selection_split(self, selection_split, args):
-    #     selection_split.blockSignals(True)
-    #     selection_split.clear()
-    #     for i in range(self.config.experiment.n_splits):
-    #         selection_split.addItem(str(i+1))
-    #     selection_split.blockSignals(False)
-    #     selection_split.setCurrentText('1')
-    #     self.handle_selection_split_currentTextChanged(selection_split)
-
-    # def handle_button_experiment_parameters_clicked(self, button, widget):
-    #     experiment_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
-    #     experiment_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-    #     x = widget.geometry().x() + widget.geometry().width()
-    #     y = widget.geometry().y() - 100
-    #     # y = button.geometry().y()# + int(select_channels_window.geometry().height() / 2)
-    #     experiment_parameters_window.move(x, y)
-    #     experiment_parameters_window.setWindowFlags(
-    #         experiment_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-    #     experiment_parameters_window.setWindowFlags(
-    #         experiment_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-    #     experiment_parameters_window.exec()
-
-    # def handle_selection_split_currentTextChanged(self, selection_split):
-    #     self.em.trigger('update local.split', int(selection_split.currentText())-1)
-    #     print('update local.split', int(selection_split.currentText())-1)
-
     def handle_button_experiment_start(self, button, layout, checked):
         if checked:
             button.setStyleSheet("background-color: blue; color: white;")
@@ -1571,7 +1544,7 @@ class ExperimentWindow(QtWidgets.QDialog):
             def put_experiment_data(queue):
                 if(queue.empty()): return
                 self.experiment.connection_status = True
-                data = queue.get(block = False)
+                data = queue.get(block=False)
 
                 def update_patient(patient):
                     self.em.trigger('update config.patient_info.patient_name', patient.name)

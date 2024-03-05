@@ -54,7 +54,7 @@ class PicturesCanvas:
             else:
                 img = value.image_name
 
-            print(img)
+            # print(img)
             self.image.set_data(vispy.io.image.imread(self.config.paths.resource_path/img))
             self.text.text = str(value)
     
