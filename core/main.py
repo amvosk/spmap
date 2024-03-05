@@ -15,7 +15,7 @@ from PyQt6 import QtWidgets
 def main():
     em = EventManager()
     config_file_default_path = '../config/config_default.ini'
-    config_file_path = '../config/config.ini'
+    # config_file_path = '../config/config.ini'
     config_ini = read_config_file(config_file_default_path)
     config = parse_config(em, config_ini)
 
