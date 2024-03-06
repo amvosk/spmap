@@ -33,36 +33,29 @@ class PicturesCanvas:
         self.image = scene.visuals.Image(
             vispy.io.image.imread(
                 self.config.paths.resource_path/'assets/transitions/default.jpg') ,parent=self.view.scene, method='auto')
-        print(*self.image.size)
 
         rect = Rect(0, 0, *self.image.size)
         self.view.camera = scene.PanZoomCamera(rect=rect, aspect=1)
         self.view.camera.flip = (0,1,0)
         self.view.update()
         self.canvas.update()
-        
-    def update_image(self, value):
-        try:
-            if(value == 'pause'):
-                img = 'assets/transitions/pause.jpg'
-            elif(value == 'blink'):
-                img = 'assets/transitions/blink.jpg'
-            elif(value == 'finish'):
-                img = 'assets/transitions/finish.jpg'
-            elif(value == 'start'):
-                img = 'assets/transitions/start.jpg'
-            else:
-                img = value.image_name
 
-            # print(img)
-            self.image.set_data(vispy.io.image.imread(self.config.paths.resource_path/img))
-            self.text.text = str(value)
-    
-            self.view.camera.rect = Rect(0, 0, *self.image.size)
-            self.view.update()
-            self.canvas.update()
-        except Empty:
-            pass
+        self.em.register_handler('experiment.transition', self.show_transition_picture)
+        self.em.register_handler('experiment.present_collection_picture', self.show_collection_picture)
+
+    def show_transition_picture(self, data):
+        image_path = 'assets/transitions/{}.jpg'.format(data)
+        self.update_image(image_path)
+
+    def show_collection_picture(self, data):
+        image_path = data
+        self.update_image(image_path)
+        
+    def update_image(self, image_path):
+        self.image.set_data(vispy.io.image.imread(self.config.paths.resource_path/image_path))
+        self.view.camera.rect = Rect(0, 0, *self.image.size)
+        self.view.update()
+        self.canvas.update()
 
 
 if __name__ == '__main__':

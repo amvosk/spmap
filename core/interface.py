@@ -38,7 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.amplifiers = [self.config.receiver.lsl_stream_name_debug]
         self.processor = Processor(self.config, self.em)
-        self.experiment = Experiment(self.config, self.em, self.config_local)
+        self.experiment = Experiment(self.config, self.em, self)
         self.stimulus = Stimulus(self.config, self.em)
         self.receiver = Receiver(self.config, self.em)
         self.generator_lsl = GeneratorLSL(self.config, self.em)
@@ -495,96 +495,96 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 
-    def create_patient_info_widget(self):
-        layout_patient_info = QtWidgets.QVBoxLayout()
-        widget_patient_info = QtWidgets.QWidget()
-        widget_patient_info.setLayout(layout_patient_info)
+    # def create_patient_info_widget(self):
+    #     layout_patient_info = QtWidgets.QVBoxLayout()
+    #     widget_patient_info = QtWidgets.QWidget()
+    #     widget_patient_info.setLayout(layout_patient_info)
+    #
+    #     separator = QtWidgets.QFrame()
+    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+    #     layout_patient_info.addWidget(separator)
+    #
+    #     label_patient_name = QtWidgets.QLabel("Patient Info")
+    #     layout_patient_info.addWidget(label_patient_name)
+    #
+    #     layout_patient_values = QtWidgets.QFormLayout()
+    #     widget_patient_values = QtWidgets.QWidget()
+    #     widget_patient_values.setLayout(layout_patient_values)
+    #     layout_patient_info.addWidget(widget_patient_values)
+    #
+    #     line_patient_name = QtWidgets.QLineEdit()
+    #     line_patient_name.setText(str(self.config.patient_info.patient_name))
+    #     line_patient_name.textChanged.connect(partial(self.handle_patient_name_textChanged, line_patient_name))
+    #     layout_patient_values.addRow("patient name", line_patient_name)
+    #
+    #     line_patient_data_path = QtWidgets.QLineEdit()
+    #     line_patient_data_path.setText(str(self.config.paths.patient_data_path))
+    #     line_patient_data_path.setEnabled(False)
+    #     # line_patient_data_path.textChanged.connect(partial(self.handle_patient_name_textChanged, line_patient_data_path))
+    #     layout_patient_values.addRow("patient data", line_patient_data_path)
+    #
+    #     return widget_patient_info
+    #
+    # def handle_patient_name_textChanged(self, line_patient_name):
+    #     self.em.trigger('update config.patient_info.patient_name', line_patient_name.text())
 
-        separator = QtWidgets.QFrame()
-        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        layout_patient_info.addWidget(separator)
-
-        label_patient_name = QtWidgets.QLabel("Patient Info")
-        layout_patient_info.addWidget(label_patient_name)
-
-        layout_patient_values = QtWidgets.QFormLayout()
-        widget_patient_values = QtWidgets.QWidget()
-        widget_patient_values.setLayout(layout_patient_values) 
-        layout_patient_info.addWidget(widget_patient_values)
-
-        line_patient_name = QtWidgets.QLineEdit()
-        line_patient_name.setText(str(self.config.patient_info.patient_name))
-        line_patient_name.textChanged.connect(partial(self.handle_patient_name_textChanged, line_patient_name))
-        layout_patient_values.addRow("patient name", line_patient_name)
-
-        line_patient_data_path = QtWidgets.QLineEdit()
-        line_patient_data_path.setText(str(self.config.paths.patient_data_path))
-        line_patient_data_path.setEnabled(False)
-        # line_patient_data_path.textChanged.connect(partial(self.handle_patient_name_textChanged, line_patient_data_path))
-        layout_patient_values.addRow("patient data", line_patient_data_path)
-
-        return widget_patient_info
-
-    def handle_patient_name_textChanged(self, line_patient_name):
-        self.em.trigger('update config.patient_info.patient_name', line_patient_name.text())
-
-
-    def create_receiver_widget(self):
-        layout_receiver = QtWidgets.QVBoxLayout()
-        widget_receiver = QtWidgets.QWidget()
-        widget_receiver.setLayout(layout_receiver)
-
-        separator = QtWidgets.QFrame()
-        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        layout_receiver.addWidget(separator)
-
-        button_generator_lsl = QtWidgets.QPushButton("GeneratorLSL")
-        button_generator_lsl.setCheckable(True)
-        button_generator_lsl.setChecked(False)
-        button_generator_lsl.toggled.connect(partial(self.handle_button_generator_lsl, button_generator_lsl))
-        layout_receiver.addWidget(button_generator_lsl)
-
-        form_layout = QtWidgets.QFormLayout()
-        form_widget = QtWidgets.QWidget()
-        form_widget.setLayout(form_layout)
-        layout_receiver.addWidget(form_widget)
-
-        self.amplifiers = [self.config.receiver.amplifier] + self.amplifiers
-        selection_amplifier = QtWidgets.QComboBox()
-        for amplifier in self.amplifiers:
-            selection_amplifier.addItem(amplifier)
-        field_ip_address = QtWidgets.QLineEdit()
-        selection_amplifier.currentTextChanged.connect(
-            partial(self.handle_currentTextChanged_amplifier, field_ip_address, selection_amplifier)
-        )
-        form_layout.addRow("Amp", selection_amplifier)
-
-        selected_amplifier = selection_amplifier.currentText()
-        field_ip_address.setText(self.config.receiver.amplifier_ip)
-        if selected_amplifier != "EBNeuro_BePLusLTM":
-            field_ip_address.setVisible(False)
-        field_ip_address.textChanged.connect(partial(self.handle_textChanged_ip_address, field_ip_address))
-        form_layout.addRow("IP", field_ip_address)
-
-        field_fs = QtWidgets.QLineEdit()
-        field_fs.setText(str(self.config.receiver.fs))
-        field_fs.textChanged.connect(partial(self.handle_textChanged_fs, field_fs))
-        form_layout.addRow("fs", field_fs)
-
-        button_select_channels = QtWidgets.QPushButton("Select Channels")
-        button_select_channels.clicked.connect(
-            partial(self.handle_button_select_channels_clicked, button_select_channels, widget_receiver)
-        )
-        layout_receiver.addWidget(button_select_channels)
-
-        button_connect = QtWidgets.QPushButton("Connect")
-        button_connect.setObjectName("connect_button")
-        button_connect.setCheckable(True)
-        button_connect.setChecked(False)
-        button_connect.toggled.connect(partial(self.handle_button_connect, button_connect, layout_receiver))
-        layout_receiver.addWidget(button_connect)
-
-        return widget_receiver
+    #
+    # def create_receiver_widget(self):
+    #     layout_receiver = QtWidgets.QVBoxLayout()
+    #     widget_receiver = QtWidgets.QWidget()
+    #     widget_receiver.setLayout(layout_receiver)
+    #
+    #     separator = QtWidgets.QFrame()
+    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+    #     layout_receiver.addWidget(separator)
+    #
+    #     button_generator_lsl = QtWidgets.QPushButton("GeneratorLSL")
+    #     button_generator_lsl.setCheckable(True)
+    #     button_generator_lsl.setChecked(False)
+    #     button_generator_lsl.toggled.connect(partial(self.handle_button_generator_lsl, button_generator_lsl))
+    #     layout_receiver.addWidget(button_generator_lsl)
+    #
+    #     form_layout = QtWidgets.QFormLayout()
+    #     form_widget = QtWidgets.QWidget()
+    #     form_widget.setLayout(form_layout)
+    #     layout_receiver.addWidget(form_widget)
+    #
+    #     self.amplifiers = [self.config.receiver.amplifier] + self.amplifiers
+    #     selection_amplifier = QtWidgets.QComboBox()
+    #     for amplifier in self.amplifiers:
+    #         selection_amplifier.addItem(amplifier)
+    #     field_ip_address = QtWidgets.QLineEdit()
+    #     selection_amplifier.currentTextChanged.connect(
+    #         partial(self.handle_currentTextChanged_amplifier, field_ip_address, selection_amplifier)
+    #     )
+    #     form_layout.addRow("Amp", selection_amplifier)
+    #
+    #     selected_amplifier = selection_amplifier.currentText()
+    #     field_ip_address.setText(self.config.receiver.amplifier_ip)
+    #     if selected_amplifier != "EBNeuro_BePLusLTM":
+    #         field_ip_address.setVisible(False)
+    #     field_ip_address.textChanged.connect(partial(self.handle_textChanged_ip_address, field_ip_address))
+    #     form_layout.addRow("IP", field_ip_address)
+    #
+    #     field_fs = QtWidgets.QLineEdit()
+    #     field_fs.setText(str(self.config.receiver.fs))
+    #     field_fs.textChanged.connect(partial(self.handle_textChanged_fs, field_fs))
+    #     form_layout.addRow("fs", field_fs)
+    #
+    #     button_select_channels = QtWidgets.QPushButton("Select Channels")
+    #     button_select_channels.clicked.connect(
+    #         partial(self.handle_button_select_channels_clicked, button_select_channels, widget_receiver)
+    #     )
+    #     layout_receiver.addWidget(button_select_channels)
+    #
+    #     button_connect = QtWidgets.QPushButton("Connect")
+    #     button_connect.setObjectName("connect_button")
+    #     button_connect.setCheckable(True)
+    #     button_connect.setChecked(False)
+    #     button_connect.toggled.connect(partial(self.handle_button_connect, button_connect, layout_receiver))
+    #     layout_receiver.addWidget(button_connect)
+    #
+    #     return widget_receiver
 
     def handle_button_select_channels_clicked(self, button, widget):
         select_channels_window = SelectChannelsWindow(self.em, self.config)
@@ -694,55 +694,55 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 
-    def create_experiment_widget(self):
-        layout_experiment = QtWidgets.QVBoxLayout()
-        widget_experiment = QtWidgets.QWidget()
-        widget_experiment.setLayout(layout_experiment)
-
-        separator = QtWidgets.QFrame()
-        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        layout_experiment.addWidget(separator)
-
-        layout_selection_split = QtWidgets.QFormLayout()
-        widget_selection_split = QtWidgets.QWidget()
-        widget_selection_split.setLayout(layout_selection_split)
-        # widget_experiment_parameters_iteration.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        layout_experiment.addWidget(widget_selection_split)
-
-        selection_split = QtWidgets.QComboBox()
-        selection_split.setObjectName("selection_split")
-        for i in range(self.config.experiment.n_splits):
-            selection_split.addItem(str(i+1))
-        selection_split.setCurrentText('1')
-        selection_split.currentTextChanged.connect(
-            partial(self.handle_selection_split_currentTextChanged, selection_split)
-        )
-        # self.em.register_handler('update selection split', partial(self._reset_selection_split, selection_split))
-        # self.em.trigger('update selection split')
-        # self.em.trigger('update local.splits_values', self.stimulus)
-        # layout_selection_split.addRow("split", selection_split)
-
-        button_experiment_start = QtWidgets.QPushButton("Start")
-        button_experiment_start.setObjectName("start_button")
-        button_experiment_start.setCheckable(True)
-        button_experiment_start.setChecked(False)
-        button_experiment_start.setDisabled(False)
-        button_experiment_start.toggled.connect(
-            partial(self.handle_button_experiment_start, button_experiment_start, layout_experiment)
-        )
-        layout_experiment.addWidget(button_experiment_start)
-
-        button_experiment_pause = QtWidgets.QPushButton("Pause")
-        button_experiment_pause.setObjectName("pause_button")
-        button_experiment_pause.setCheckable(True)
-        button_experiment_pause.setChecked(True)
-        button_experiment_pause.setDisabled(True)
-        button_experiment_pause.toggled.connect(
-            partial(self.handle_button_experiment_pause, button_experiment_pause, layout_experiment)
-        )
-        layout_experiment.addWidget(button_experiment_pause)
-
-        return widget_experiment
+    # def create_experiment_widget(self):
+    #     layout_experiment = QtWidgets.QVBoxLayout()
+    #     widget_experiment = QtWidgets.QWidget()
+    #     widget_experiment.setLayout(layout_experiment)
+    #
+    #     separator = QtWidgets.QFrame()
+    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+    #     layout_experiment.addWidget(separator)
+    #
+    #     layout_selection_split = QtWidgets.QFormLayout()
+    #     widget_selection_split = QtWidgets.QWidget()
+    #     widget_selection_split.setLayout(layout_selection_split)
+    #     # widget_experiment_parameters_iteration.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+    #     layout_experiment.addWidget(widget_selection_split)
+    #
+    #     selection_split = QtWidgets.QComboBox()
+    #     selection_split.setObjectName("selection_split")
+    #     for i in range(self.config.experiment.n_splits):
+    #         selection_split.addItem(str(i+1))
+    #     selection_split.setCurrentText('1')
+    #     selection_split.currentTextChanged.connect(
+    #         partial(self.handle_selection_split_currentTextChanged, selection_split)
+    #     )
+    #     # self.em.register_handler('update selection split', partial(self._reset_selection_split, selection_split))
+    #     # self.em.trigger('update selection split')
+    #     # self.em.trigger('update local.splits_values', self.stimulus)
+    #     # layout_selection_split.addRow("split", selection_split)
+    #
+    #     button_experiment_start = QtWidgets.QPushButton("Start")
+    #     button_experiment_start.setObjectName("start_button")
+    #     button_experiment_start.setCheckable(True)
+    #     button_experiment_start.setChecked(False)
+    #     button_experiment_start.setDisabled(False)
+    #     button_experiment_start.toggled.connect(
+    #         partial(self.handle_button_experiment_start, button_experiment_start, layout_experiment)
+    #     )
+    #     layout_experiment.addWidget(button_experiment_start)
+    #
+    #     button_experiment_pause = QtWidgets.QPushButton("Pause")
+    #     button_experiment_pause.setObjectName("pause_button")
+    #     button_experiment_pause.setCheckable(True)
+    #     button_experiment_pause.setChecked(True)
+    #     button_experiment_pause.setDisabled(True)
+    #     button_experiment_pause.toggled.connect(
+    #         partial(self.handle_button_experiment_pause, button_experiment_pause, layout_experiment)
+    #     )
+    #     layout_experiment.addWidget(button_experiment_pause)
+    #
+    #     return widget_experiment
 
     # def _reset_selection_split(self, selection_split, args):
     #     selection_split.blockSignals(True)
@@ -766,62 +766,62 @@ class MainWindow(QtWidgets.QMainWindow):
     #         experiment_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
     #     experiment_parameters_window.exec()
 
-    def handle_selection_split_currentTextChanged(self, selection_split):
-        self.em.trigger('update local.split', int(selection_split.currentText())-1)
-        # print('update local.split', int(selection_split.currentText())-1)
-
-    def handle_button_experiment_start(self, button, layout, checked):
-        if checked:
-            button.setStyleSheet("background-color: blue; color: white;")
-            button.setText("Stop")
-            for i in range(layout.count()):
-                widget = layout.itemAt(i).widget()
-                if widget.objectName() in ["pause_button"]:
-                    widget.setChecked(False)
-                    widget.setDisabled(False)
-                if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
-                    widget.setDisabled(True)
-            self.em.trigger('experiment.start')
-            self.timer_experiment = QtCore.QTimer(self)
-
-            def put_experiment_data(queue):
-                if(queue.empty()): return
-                data = queue.get(block = False)
-                if(self.receiver):
-                    self.canvas_pictures.update_image(data)
-                    #self.receiver.stimulus_check(data)
-                    self.receiver.queue_put(data)
-                else:
-                    self.canvas_pictures.update_image(data)
-
-            self.timer_experiment.timeout.connect(
-                lambda: put_experiment_data(self.experiment.queue_output)) 
-            self.timer_experiment.start(1)
-
-        else:
-            button.setStyleSheet("")
-            button.setText("Start")
-            for i in range(layout.count()):
-                widget = layout.itemAt(i).widget()
-                if widget.objectName() in ['pause_button']:
-                    widget.setChecked(True)
-                    widget.setDisabled(True)
-                    widget.setStyleSheet("")
-                if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
-                    widget.setDisabled(False)
-            self.em.trigger('experiment.stop')
-            self.timer_experiment.stop()
-            self.timer_experiment = None
-
-
-
-    def handle_button_experiment_pause(self, button, layout, checked):
-        if checked:
-            button.setStyleSheet("background-color: blue; color: white;")
-            self.em.trigger('experiment.pause')
-        else:
-            button.setStyleSheet("")
-            self.em.trigger('experiment.unpause')
+    # def handle_selection_split_currentTextChanged(self, selection_split):
+    #     self.em.trigger('update local.split', int(selection_split.currentText())-1)
+    #     # print('update local.split', int(selection_split.currentText())-1)
+    #
+    # def handle_button_experiment_start(self, button, layout, checked):
+    #     if checked:
+    #         button.setStyleSheet("background-color: blue; color: white;")
+    #         button.setText("Stop")
+    #         for i in range(layout.count()):
+    #             widget = layout.itemAt(i).widget()
+    #             if widget.objectName() in ["pause_button"]:
+    #                 widget.setChecked(False)
+    #                 widget.setDisabled(False)
+    #             if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
+    #                 widget.setDisabled(True)
+    #         self.em.trigger('experiment.start')
+    #         self.timer_experiment = QtCore.QTimer(self)
+    #
+    #         def put_experiment_data(queue):
+    #             if(queue.empty()): return
+    #             data = queue.get(block = False)
+    #             if(self.receiver):
+    #                 self.canvas_pictures.update_image(data)
+    #                 #self.receiver.stimulus_check(data)
+    #                 self.receiver.queue_put(data)
+    #             else:
+    #                 self.canvas_pictures.update_image(data)
+    #
+    #         self.timer_experiment.timeout.connect(
+    #             lambda: put_experiment_data(self.experiment.queue_output))
+    #         self.timer_experiment.start(1)
+    #
+    #     else:
+    #         button.setStyleSheet("")
+    #         button.setText("Start")
+    #         for i in range(layout.count()):
+    #             widget = layout.itemAt(i).widget()
+    #             if widget.objectName() in ['pause_button']:
+    #                 widget.setChecked(True)
+    #                 widget.setDisabled(True)
+    #                 widget.setStyleSheet("")
+    #             if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
+    #                 widget.setDisabled(False)
+    #         self.em.trigger('experiment.stop')
+    #         self.timer_experiment.stop()
+    #         self.timer_experiment = None
+    #
+    #
+    #
+    # def handle_button_experiment_pause(self, button, layout, checked):
+    #     if checked:
+    #         button.setStyleSheet("background-color: blue; color: white;")
+    #         self.em.trigger('experiment.pause')
+    #     else:
+    #         button.setStyleSheet("")
+    #         self.em.trigger('experiment.unpause')
 
     def receiver_dialog(self):
         receiver_window = ReceiverWindow(self.config,self.em, self.receiver, self.generator_lsl, self.processor, self.timeseries, self.sound, self.timer_connect,self.control_widget)
@@ -838,7 +838,7 @@ class MainWindow(QtWidgets.QMainWindow):
         patient_window.exec()
         
     def experiment_dialog(self):
-        experiment_window = ExperimentWindow(self.config, self.em, self.experiment, self.receiver, self.stimulus, self.canvas_pictures)
+        experiment_window = ExperimentWindow(self.config, self.em, self.experiment)
         experiment_window.exec()
 
     def run_all(self):
@@ -1461,16 +1461,13 @@ class SelectChannelsWindow(QtWidgets.QDialog):
 
 
 class ExperimentWindow(QtWidgets.QDialog):
-    def __init__(self,config, em, experiment, receiver, stimulus, canvas_pictures):
+    def __init__(self,config, em, experiment):
         super().__init__()
         self.config = config
         self.em = em
         self.experiment = experiment
-        self.receiver = receiver
-        self.stimulus = stimulus
-        self.canvas_pictures = canvas_pictures
-        self.timer = QtCore.QTimer(self)
-        self.timer_experiment = None
+        self.timer_connection = QtCore.QTimer(self)
+        self.connection_status = False
 
         layout_experiment = QtWidgets.QVBoxLayout()
         self.setLayout(layout_experiment)
@@ -1496,8 +1493,8 @@ class ExperimentWindow(QtWidgets.QDialog):
         widget_connection_status.setLayout(layout_connection_status)
         layout_experiment.addWidget(widget_connection_status)
         connection_status = QtWidgets.QLabel("Please Wait...")
-        self.timer.timeout.connect(lambda : self.update_connection_status(connection_status))
-        self.timer.start(2000)
+        self.timer_connection.timeout.connect(lambda : self.update_connection_status(connection_status))
+        self.timer_connection.start(100)
 
         layout_connection_status.addRow("connection status", connection_status)
 
@@ -1523,7 +1520,7 @@ class ExperimentWindow(QtWidgets.QDialog):
     def update_connection_status(self, label):
         #current_color = self.label.palette().color(QPalette.WindowText)
         #new_color = Qt.green if current_color == Qt.red else Qt.red
-        if (self.experiment.connection_status):
+        if (self.connection_status):
             label.setText("Connected")
             label.setStyleSheet("color: green")
         else:
@@ -1534,58 +1531,56 @@ class ExperimentWindow(QtWidgets.QDialog):
         if checked:
             button.setStyleSheet("background-color: blue; color: white;")
             button.setText("Disconnect")
-            for i in range(layout.count()):
-                widget = layout.itemAt(i).widget()
-                if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
-                    widget.setDisabled(True)
-            self.em.trigger('experiment.start')
-            self.timer_experiment = QtCore.QTimer(self)
 
-            def put_experiment_data(queue):
-                if(queue.empty()): return
-                self.experiment.connection_status = True
-                data = queue.get(block=False)
+            self.experiment.start()
+            self.connection_status = True
+            button.setStyleSheet("background-color: blue; color: white;")
+            button.setText("Disconnect")
 
-                def update_patient(patient):
-                    self.em.trigger('update config.patient_info.patient_name', patient.name)
-                    self.em.trigger('update config.patient_info.patient_date', patient.birthDate)
-                    self.em.trigger('update config.patient_info.patient_hospital', patient.hospital)
-                    self.em.trigger('update config.patient_info.patient_history_id', patient.historyID)
-                    self.em.trigger('update config.patient_info.patient_hospitalization_date', patient.hospitalizationDate)
-                    #self.em.trigger('save_config', None)
-                    print('Пациент добавлен',self.config.patient_info)
+            # self.timer_experiment = QtCore.QTimer(self)
 
-                if(data.__class__.__name__== 'PatientData'):
-                    update_patient(data)
-                    return
-
-                if(self.receiver):
-                    self.canvas_pictures.update_image(data)
-                    self.receiver.queue_put(data)
-                else:
-                    self.canvas_pictures.update_image(data)
-
-            self.timer_experiment.timeout.connect(
-                lambda: put_experiment_data(self.experiment.queue_output))
-            self.timer_experiment.start(1)
+            # def put_experiment_data(queue):
+            #     if(queue.empty()): return
+            #     self.experiment.connection_status = True
+            #     data = queue.get(block=False)
+            #
+            #     def update_patient(patient):
+            #         self.em.trigger('update config.patient_info.patient_name', patient.name)
+            #         self.em.trigger('update config.patient_info.patient_date', patient.birthDate)
+            #         self.em.trigger('update config.patient_info.patient_hospital', patient.hospital)
+            #         self.em.trigger('update config.patient_info.patient_history_id', patient.historyID)
+            #         self.em.trigger('update config.patient_info.patient_hospitalization_date', patient.hospitalizationDate)
+            #         #self.em.trigger('save_config', None)
+            #         print('Пациент добавлен',self.config.patient_info)
+            #
+            #     if(data.__class__.__name__== 'PatientData'):
+            #         update_patient(data)
+            #         return
+            #
+            #     if(self.receiver):
+            #         self.canvas_pictures.update_image(data)
+            #         self.receiver.queue_put(data)
+            #     else:
+            #         self.canvas_pictures.update_image(data)
+            #
+            # self.timer_experiment.timeout.connect(
+            #     lambda: put_experiment_data(self.experiment.queue_output))
+            # self.timer_experiment.start(1)
 
         else:
-            #self.experiment = None
-            self.experiment.process.terminate()
-            self.experiment.process = None
-
-            self.experiment.connection_status = False
+            self.experiment.clear()
+            self.connection_status = False
             button.setStyleSheet("")
             button.setText("Connect")
-            for i in range(layout.count()):
-                widget = layout.itemAt(i).widget()
-                if widget.objectName() in ['pause_button']:
-                    widget.setChecked(True)
-                    widget.setDisabled(True)
-                    widget.setStyleSheet("")
-                if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
-                    widget.setDisabled(False)
-            self.em.trigger('experiment.stop')
+            # for i in range(layout.count()):
+            #     widget = layout.itemAt(i).widget()
+            #     if widget.objectName() in ['pause_button']:
+            #         widget.setChecked(True)
+            #         widget.setDisabled(True)
+            #         widget.setStyleSheet("")
+            #     if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
+            #         widget.setDisabled(False)
+            # self.em.trigger('experiment.stop')
             #self.timer_experiment.stop()
             #self.timer_experiment = None
 

@@ -53,7 +53,6 @@ class BaseHandler(ABC):
     async def _receive(self) -> Message:
         data = await self.websocket.receive_text()
         message = Message.model_validate(json.loads(data))
-        print(message.action)
         return message
 
     @abstractmethod

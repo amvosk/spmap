@@ -40,17 +40,8 @@ class MyWindow(QMainWindow):
 
         layout.addWidget(self.canvas_pictures.canvas.native)
 
-        self.experiment = Experiment(config, em)
+        self.experiment = Experiment(config, em, self)
         self.experiment.start()
-
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(lambda : self.push_pictures(self.experiment.queue_output, self.canvas_pictures.update_image))
-        self.timer.start(1)
-
-    def push_pictures(self, queue, update_image):
-        if (queue.empty()): return
-        data = queue.get(block=False)
-        update_image(data)
 
 
 if __name__ == '__main__':

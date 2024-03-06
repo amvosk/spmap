@@ -11,7 +11,6 @@ SPEECH_MAPPING_CMD_IMAGE = "IMAGE"  # image was shown
 SPEECH_MAPPING_CMD_BLINK = "BLINK"  # blink screen was shown
 SPEECH_MAPPING_CMD_PATIENT = "PATIENT"
 
-# @dataclass
 class ImageData(BaseModel):
     collection_name: str
     image_name: str
@@ -21,7 +20,6 @@ class ImageData(BaseModel):
         return "ImageData(collection_name='{}', image_name='{}', duration={})".format(self.collection_name,
                                                                                       self.image_name, self.duration)
 
-# @dataclass
 class PatientData(BaseModel):
     name: str
     birthDate: str
@@ -33,7 +31,6 @@ class PatientData(BaseModel):
         return "PatientData(name ='{}', birthDate='{}', hospital='{}',historyID = '{}',hospitalizationDate = '{}')".format(
             self.name, self.birthDate, self.hospital, self.historyID, self.hospitalizationDate)
 
-# @dataclass
 class BlinkData(BaseModel):
     duration: float
 

@@ -23,23 +23,23 @@
 # em.trigger(EVENT_A, "hello") # prints "Event A triggered with data: hello"
 # em.trigger(EVENT_B, {"a": 1, "b": 2}) # prints "Event B triggered with data: {'a': 1, 'b': 2}"
 
-import copy
-from dataclasses import dataclass, fields
-
-
-from dataclasses import dataclass, fields
-
-@dataclass
-class MyDataClass:
-    field1: int
-    field2: str
-
-def change_fields(self, new_value):
-    for f in fields(self):
-        setattr(self, f.name, new_value)
-
-setattr(MyDataClass,'change_all', change_fields)
-
-obj = MyDataClass(1, '2')
-obj.change_all(5)
-print(obj)
+# import copy
+# from dataclasses import dataclass, fields
+#
+#
+# from dataclasses import dataclass, fields
+#
+# @dataclass
+# class MyDataClass:
+#     field1: int
+#     field2: str
+#
+# def change_fields(self, new_value):
+#     for f in fields(self):
+#         setattr(self, f.name, new_value)
+#
+# setattr(MyDataClass,'change_all', change_fields)
+#
+# obj = MyDataClass(1, '2')
+# obj.change_all(5)
+# print(obj)

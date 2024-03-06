@@ -3,6 +3,7 @@ from fastapi import Depends, FastAPI, WebSocket, status, Header
 
 import uvicorn
 
+from pydantic import BaseModel
 from eloq_server import settings, speech_mapping_handler
 from eloq_server import EXAMINATION_HANDLERS, Message, BaseHandler
 
@@ -46,6 +47,10 @@ def create_app(callbacks: Mapping[str, Callable[[Message], Optional[Any]]], eloq
     return app
 
 
+class ControlData(BaseModel):
+    signal: str
+
+
 def run_server(queue):
     def callback_image(data: speech_mapping_handler.ImageData):
         # print(f"IMAGE event received with data {repr(data)}.")
@@ -53,27 +58,29 @@ def run_server(queue):
 
     def callback_pause(data: None):
         # print("PAUSE event received")
-        queue.put("pause")
+        data = ControlData(signal='PAUSE')
+        queue.put(data)
 
     def callback_blink(data: speech_mapping_handler.BlinkData):
-        queue.put("blink")
+        # queue.put("blink")
+        data = ControlData(signal='BLINK')
+        queue.put(data)
         # print(f"BLINK event received with data {repr(data)}.")
 
     def callback_finish(data: None):
+        data = ControlData(signal='FINISH')
         # print("FINISH event received. Sending all data to the mobile app.")
-        queue.put("finish")
-
-    # def callback_connect(data: None):
-    #     print("Connection event received")
-    #     queue.put("connect")
+        queue.put(data)
 
     def callback_resume(data: None):
         # print("RESUME event received")
-        queue.put("resume")
+        data = ControlData(signal='RESUME')
+        queue.put(data)
 
     def callback_start(data: None):
         # print("START event received")
-        queue.put("start")
+        data = ControlData(signal='START')
+        queue.put(data)
 
     def callback_patient(data: speech_mapping_handler.PatientData):
         queue.put(data)
