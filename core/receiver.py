@@ -18,11 +18,13 @@ import multiprocessing
 
 @dataclass
 class RecorderFlags:
-    # connection_state: int
-    # experiment_state: int
     control_index: int
     stimulus_index: int
     cache_index: int
+
+    def __str__(self):
+        return 'control_index={}, stimulus_index={}, cache_index={}'.format(
+            self.control_index, self.stimulus_index, self.cache_index)
 
 
 class NoStreamError(ConnectionError):
@@ -53,21 +55,28 @@ def _connect_lsl(config_receiver):
         'Found {} streams, all streams with name {} are empty'.format(len(streams),
                                                                       config_receiver.lsl_stream_name)) from None
 
+def clear_queue(queue_input):
+    while not queue_input.empty():
+        try:
+            _ = queue_input.get(block=True)
+        except Empty:
+            pass
 
-def resolve_queue_input(flags, receiver_queue_input_):
-    try: 
-        value = receiver_queue_input_.get(block=False)
-        print("recieved value", value)
-        if(value == 'blink' or value == 'pause' or value == 'finish'):
-            #flags = self.queue_input.get()
-            print(0)
-            return 0 
-        else: 
-            print(1)
-            return 1
 
-    except Empty:
-        return flags.stimulus_index
+def resolve_queue_input(flags, queue_input):
+    if not queue_input.empty():
+        try:
+            message = queue_input.get(block=True)
+            print(message)
+            field, value = message
+            if field == 'control_index':
+                flags.control_index = value
+            if field == 'stimulus_index':
+                flags.stimulus_index = value
+        except Empty:
+            pass
+        print(flags)
+    return flags
 
 
 def _connect(config_receiver, queue_input, queue_output, stop_event):
@@ -79,20 +88,16 @@ def _connect(config_receiver, queue_input, queue_output, stop_event):
         inlet = None
 
     flags = RecorderFlags(
-        # connection_state=1,
-        # experiment_state=0,
         control_index=0,
         stimulus_index=0,
         cache_index=0,
     )
+    clear_queue(queue_input)
 
-    # flags = resolve_queue_input(flags, queue_input)
     cache = np.zeros((config_receiver.cache_size, config_receiver.cache_width))
     while not stop_event.is_set():
 
-        #flags = resolve_queue_input(flags, queue_input)
-        flags.stimulus_index = resolve_queue_input(flags, queue_input)
-        #print(flags)
+        flags = resolve_queue_input(flags, queue_input)
         # pull sample and check, is it successful
         sample, timestamp = inlet.pull_sample(timeout=1)
         if timestamp is None:
@@ -117,8 +122,8 @@ def _connect(config_receiver, queue_input, queue_output, stop_event):
             cache[flags.cache_index] = big_sample
             flags.cache_index += 1
 
-            #flags.control_index = 0
-            #flags.stimulus_index = 0
+            flags.control_index = 0
+            flags.stimulus_index = 0
             
         if flags.cache_index == config_receiver.cache_size:
             queue_output.put(('chunk', np.copy(cache)))
@@ -142,21 +147,33 @@ class Receiver:
         self.queue_input = multiprocessing.Queue()
         self.queue_output = multiprocessing.Queue()
 
-        self.stimulus = 0
+        self.em.register_handler('experiment.transition', self.parse_control)
+        self.em.register_handler('experiment.stimulus_image', self.parse_stimulus)
+        self.em.register_handler('experiment.blank', self.parse_stimulus)
 
-    def queue_put(self, input_):
-        self.queue_input.put(input_)
 
-    def queue_get(self):
-        return self.queue_output.get()
+    def parse_control(self, data):
+        control_index = 0
+        if data == 'start':
+            control_index = 1
+        elif data == 'finish':
+            control_index = 2
+        elif data == 'pause':
+            control_index = 3
+        elif data == 'resume':
+            control_index = 4
+        message = ('control_index', control_index)
+        self.queue_input.put(message)
 
-    def queue_empty(self):
-        return self.queue_output.empty()
+    def parse_stimulus(self, data):
+        if data == 'blink':
+            message = ('stimulus_index', 2)
+        else:
+            message = ('stimulus_index', 1)
+        self.queue_input.put(message)
 
-    def queue_size(self):
-        return self.queue_output.qsize()
 
-    
+
     def stimulus_check(self, queue): #queue из experiment --> _debug_example
         try: 
             value = queue.get(block=False)
@@ -167,6 +184,10 @@ class Receiver:
                 self.stimulus = 1
         except Empty:
             pass
+
+
+
+
 
     def connect(self):
         try:
@@ -183,15 +204,10 @@ class Receiver:
             if self.receiver_process.is_alive():
                 self.receiver_process.terminate()
 
-    def disconnect(self):
-        self.stop_event.set()
-        # try:
-        #     self.queue_put({'connection_state': 0})
-        # except AttributeError as exc:
-        #     print('No process available to disconnect')
-    #
-    # def stop(self):
-    #     self.stop_event.set()
+    def terminate(self):
+        if self.receiver_process is not None:
+            if self.receiver_process.is_alive():
+                self.receiver_process.terminate()
 
     def clear(self):
         self.stop_event.set()

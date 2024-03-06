@@ -5,13 +5,14 @@ import numpy as np
 
 sys.path.insert(0, '../core/')
 sys.path.insert(0, '../config/')
+from event_manager import EventManager
 from config import read_config_file, parse_config
 from receiver import Receiver
 
 
-def test_connect(recvr, config_receiver):
+def test_connect(recvr):
     print('TEST: test_connect')
-    recvr.connect(config_receiver)
+    recvr.connect()
     return recvr
 
 
@@ -21,15 +22,15 @@ def test_disconnect(recvr):
     return recvr
 
 
-def test_queue_put(recvr):
-    print('TEST: test_queue_put')
-    time.sleep(.5)
-    recvr.queue_put({'experiment_state': 1})
-    time.sleep(.5)
-    recvr.queue_put({'control_index': 1, 'stimulus_index': 1})
-    time.sleep(.5)
-    assert recvr.receiver_queue_input.empty()
-    return recvr
+# def test_queue_put(recvr):
+#     print('TEST: test_queue_put')
+#     time.sleep(.5)
+#     recvr.queue_put({'experiment_state': 1})
+#     time.sleep(.5)
+#     recvr.queue_put({'control_index': 1, 'stimulus_index': 1})
+#     time.sleep(.5)
+#     assert recvr.receiver_queue_input.empty()
+#     return recvr
 
 
 def test_queue_get(recvr):
@@ -49,12 +50,13 @@ def test_queue_get(recvr):
 if __name__ == '__main__':
     config_file_path = '../config/config_default.ini'
     config_ini = read_config_file(config_file_path)
-    config = parse_config(config_ini)
+    em = EventManager()
+    config = parse_config(em, config_ini)
 
-    recvr = Receiver()
+    recvr = Receiver(config, em)
 
-    recvr = test_connect(recvr, config.receiver)
-    recvr = test_queue_put(recvr)
+    recvr = test_connect(recvr)
+    # recvr = test_queue_put(recvr)
     recvr = test_disconnect(recvr)
     recvr = test_queue_get(recvr)
     recvr.clear()

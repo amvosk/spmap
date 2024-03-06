@@ -50,6 +50,9 @@ def create_app(callbacks: Mapping[str, Callable[[Message], Optional[Any]]], eloq
 class ControlData(BaseModel):
     signal: str
 
+class BlankData(BaseModel):
+    signal: str
+
 
 def run_server(queue):
     def callback_image(data: speech_mapping_handler.ImageData):
@@ -63,7 +66,7 @@ def run_server(queue):
 
     def callback_blink(data: speech_mapping_handler.BlinkData):
         # queue.put("blink")
-        data = ControlData(signal='BLINK')
+        data = BlankData(signal='BLINK')
         queue.put(data)
         # print(f"BLINK event received with data {repr(data)}.")
 

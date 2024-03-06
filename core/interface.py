@@ -162,24 +162,24 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         # Call your function here
         if self.receiver is not None:
-            self.receiver.disconnect()
+            self.receiver.clear()
         if self.generator_lsl is not None:
             self.generator_lsl.stop()
         # Accept the close event to close the window
         event.accept()
 
-    def handle_currentTextChanged_amplifier(self, field_ip_address, amplifier):
-        if amplifier.currentText() == "EBNeuro_BePLusLTM":
-            field_ip_address.setVisible(True)
-        else:
-            field_ip_address.setVisible(False)
-        self.em.trigger('update config.receiver.amplifier', amplifier.currentText())
+    # def handle_currentTextChanged_amplifier(self, field_ip_address, amplifier):
+    #     if amplifier.currentText() == "EBNeuro_BePLusLTM":
+    #         field_ip_address.setVisible(True)
+    #     else:
+    #         field_ip_address.setVisible(False)
+    #     self.em.trigger('update config.receiver.amplifier', amplifier.currentText())
 
-    def handle_textChanged_ip_address(self, ip_address):
-        self.em.trigger('update config.receiver.amplifier_ip', ip_address.text())
+    # def handle_textChanged_ip_address(self, ip_address):
+    #     self.em.trigger('update config.receiver.amplifier_ip', ip_address.text())
 
-    def handle_textChanged_fs(self, fs):
-        self.em.trigger('update config.receiver.fs', fs.text())
+    # def handle_textChanged_fs(self, fs):
+    #     self.em.trigger('update config.receiver.fs', fs.text())
 
     def create_brain_checkbox(self, args=None):
         while self.layout_brain_checkbox.count():
@@ -219,45 +219,45 @@ class MainWindow(QtWidgets.QMainWindow):
     # def update_brain_checkbox_height(self, height):
     #     self.widget_brain_checkbox.setFixedHeight(height)
 
-    def handle_button_generator_lsl(self, button, checked):
-        if checked:
-            button.setStyleSheet("background-color: blue; color: white;")
-            self.generator_lsl = GeneratorLSL(self.config, self.em)
-            self.generator_lsl.start()
-        else:
-            button.setStyleSheet("")
-            self.generator_lsl.stop()
-            self.generator_lsl = None
+    # def handle_button_generator_lsl(self, button, checked):
+    #     if checked:
+    #         button.setStyleSheet("background-color: blue; color: white;")
+    #         self.generator_lsl = GeneratorLSL(self.config, self.em)
+    #         self.generator_lsl.start()
+    #     else:
+    #         button.setStyleSheet("")
+    #         self.generator_lsl.stop()
+    #         self.generator_lsl = None
 
-    def handle_button_connect(self, button, layout_receiver, checked):
-        if checked:
-            button.setStyleSheet("background-color: blue; color: white;")
-            for i in range(layout_receiver.count()):
-                widget = layout_receiver.itemAt(i).widget()
-                if widget.objectName() not in ["connect_button", 'receiver_label']:
-                    widget.setDisabled(True)
-            self.receiver = Receiver(self.config, self.em)
-            self.receiver.connect()
-
-            self.processor.set_receiver_queue_input(self.receiver.queue_input)
-            self.processor.set_receiver_queue_output(self.receiver.queue_output)
-            self.timer_connect = QtCore.QTimer(self)
-            self.timer_connect.timeout.connect(
-                partial(self.processor.on_timer, self.timeseries.update_data, self.sound.update_data)
-            )
-            self.timer_connect.start(30)
-        else:
-            button.setStyleSheet("")
-            for i in range(layout_receiver.count()):
-                widget = layout_receiver.itemAt(i).widget()
-                if widget.objectName() not in ["connect_button", 'receiver_label']:
-                    widget.setDisabled(False)
-            self.timer_connect.stop()
-            self.timer_connect = None
-            self.receiver.disconnect()
-            self.receiver = None
-            self.processor.set_receiver_queue_input(None)
-            self.processor.set_receiver_queue_output(None)
+    # def handle_button_connect(self, button, layout_receiver, checked):
+    #     if checked:
+    #         button.setStyleSheet("background-color: blue; color: white;")
+    #         for i in range(layout_receiver.count()):
+    #             widget = layout_receiver.itemAt(i).widget()
+    #             if widget.objectName() not in ["connect_button", 'receiver_label']:
+    #                 widget.setDisabled(True)
+    #         self.receiver = Receiver(self.config, self.em)
+    #         self.receiver.connect()
+    #
+    #         self.processor.set_receiver_queue_input(self.receiver.queue_input)
+    #         self.processor.set_receiver_queue_output(self.receiver.queue_output)
+    #         self.timer_connect = QtCore.QTimer(self)
+    #         self.timer_connect.timeout.connect(
+    #             partial(self.processor.on_timer, self.timeseries.update_data, self.sound.update_data)
+    #         )
+    #         self.timer_connect.start(30)
+    #     else:
+    #         button.setStyleSheet("")
+    #         for i in range(layout_receiver.count()):
+    #             widget = layout_receiver.itemAt(i).widget()
+    #             if widget.objectName() not in ["connect_button", 'receiver_label']:
+    #                 widget.setDisabled(False)
+    #         self.timer_connect.stop()
+    #         self.timer_connect = None
+    #         self.receiver.disconnect()
+    #         self.receiver = None
+    #         self.processor.set_receiver_queue_input(None)
+    #         self.processor.set_receiver_queue_output(None)
 
     def create_menu_bar(self):
         menu_bar = self.menuBar()
@@ -390,7 +390,7 @@ class MainWindow(QtWidgets.QMainWindow):
         control_layout.setContentsMargins(7, 20, 0, 0)
         control_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignHCenter)
 
-        icons_path = "../resource/icons/"
+        # icons_path = "../resource/icons/"
         icons_style = """
             QPushButton {
                 border: none;
@@ -422,7 +422,6 @@ class MainWindow(QtWidgets.QMainWindow):
         receiver_icon.setIconSize(QtCore.QSize(30, 30))    
         receiver_icon.clicked.connect(lambda: icon_clicked(receiver_icon))
         receiver_icon.setFixedSize(QtCore.QSize(40,40))
-
 
         settings_icon = QtWidgets.QPushButton()
         settings_icon.setIcon(QIcon(str(self.config.paths.resource_path) + "/icons/settings.svg"))
@@ -586,111 +585,111 @@ class MainWindow(QtWidgets.QMainWindow):
     #
     #     return widget_receiver
 
-    def handle_button_select_channels_clicked(self, button, widget):
-        select_channels_window = SelectChannelsWindow(self.em, self.config)
-        select_channels_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-        x = widget.geometry().x() + widget.geometry().width()
-        # y = button.geometry().y() + int(select_channels_window.geometry().height() / 2)
-        y = widget.geometry().y()
-        select_channels_window.move(x, y)
-        select_channels_window.setWindowFlags(
-            select_channels_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-        select_channels_window.setWindowFlags(
-            select_channels_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-        select_channels_window.exec()
+    # def handle_button_select_channels_clicked(self, button, widget):
+    #     select_channels_window = SelectChannelsWindow(self.em, self.config)
+    #     select_channels_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
+    #     x = widget.geometry().x() + widget.geometry().width()
+    #     # y = button.geometry().y() + int(select_channels_window.geometry().height() / 2)
+    #     y = widget.geometry().y()
+    #     select_channels_window.move(x, y)
+    #     select_channels_window.setWindowFlags(
+    #         select_channels_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
+    #     select_channels_window.setWindowFlags(
+    #         select_channels_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
+    #     select_channels_window.exec()
 
 
-    def create_visualization_widget(self):
-        layout_visualization = QtWidgets.QVBoxLayout()
-        widget_visualization = QtWidgets.QWidget()
-        widget_visualization.setLayout(layout_visualization)
+    # def create_visualization_widget(self):
+    #     layout_visualization = QtWidgets.QVBoxLayout()
+    #     widget_visualization = QtWidgets.QWidget()
+    #     widget_visualization.setLayout(layout_visualization)
+    #
+    #     separator = QtWidgets.QFrame()
+    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+    #     layout_visualization.addWidget(separator)
+    #
+    #     label_visualization = QtWidgets.QLabel("Visualization")
+    #     label_visualization.setObjectName("visualization_label")
+    #     layout_visualization.addWidget(label_visualization)
+    #
+    #     button_visualization_parameters = QtWidgets.QPushButton("Parameters")
+    #     button_visualization_parameters.setObjectName("button_experiment_parameters")
+    #     button_visualization_parameters.clicked.connect(
+    #         partial(self.handle_button_visualization_parameters_clicked, button_visualization_parameters, widget_visualization)
+    #     )
+    #     layout_visualization.addWidget(button_visualization_parameters)
+    #
+    #     layout_visualization_settings = QtWidgets.QHBoxLayout()
+    #     widget_visualization_settings = QtWidgets.QWidget()
+    #     widget_visualization_settings.setLayout(layout_visualization_settings)
+    #     layout_visualization.addWidget(widget_visualization_settings)
+    #
+    #     layout_visualization_type = QtWidgets.QVBoxLayout()
+    #     widget_visualization_type = QtWidgets.QWidget()
+    #     widget_visualization_type.setLayout(layout_visualization_type)
+    #     layout_visualization_settings.addWidget(widget_visualization_type)
+    #
+    #     self.button_group_visualization_type = QtWidgets.QButtonGroup()
+    #     visualization_types = ["ECoG", "Spec", "hgECoG", "hgSpec", "hgA"]
+    #     for visualization_type in visualization_types:
+    #         radio_button = QtWidgets.QRadioButton(visualization_type)
+    #         radio_button.setObjectName(visualization_type)
+    #         self.button_group_visualization_type.addButton(radio_button)
+    #         layout_visualization_type.addWidget(radio_button)
+    #     self.button_group_visualization_type.setExclusive(True)
+    #     self.button_group_visualization_type.buttonClicked.connect(self.handle_button_visualization_type_buttonClicked)
+    #     self.button_group_visualization_type.buttons()[0].setChecked(True)
+    #
+    #     layout_visualization_parameters_checkbox = QtWidgets.QVBoxLayout()
+    #     widget_visualization_parameters_checkbox = QtWidgets.QWidget()
+    #     widget_visualization_parameters_checkbox.setLayout(layout_visualization_parameters_checkbox)
+    #     layout_visualization_settings.addWidget(widget_visualization_parameters_checkbox)
+    #
+    #     checkbox_notch_filter_naive_ecog = QtWidgets.QCheckBox("eNotch")
+    #     checkbox_notch_filter_naive_ecog.setChecked(self.config.visualizer.ecog_notch)
+    #     checkbox_notch_filter_naive_ecog.stateChanged.connect(
+    #         self.handle_checkbox_notch_filter_naive_ecog_stateChanged)
+    #     layout_visualization_parameters_checkbox.addWidget(checkbox_notch_filter_naive_ecog)
+    #
+    #     checkbox_highpass_filter_naive_ecog = QtWidgets.QCheckBox("eHP")
+    #     checkbox_highpass_filter_naive_ecog.setChecked(self.config.visualizer.ecog_highpass_filter)
+    #     checkbox_highpass_filter_naive_ecog.stateChanged.connect(
+    #         self.handle_checkbox_highpass_filter_naive_ecog_stateChanged)
+    #     layout_visualization_parameters_checkbox.addWidget(checkbox_highpass_filter_naive_ecog)
+    #
+    #     checkbox_lowpass_filter_naive_ecog = QtWidgets.QCheckBox("eLP")
+    #     checkbox_lowpass_filter_naive_ecog.setChecked(self.config.visualizer.ecog_lowpass_filter)
+    #     checkbox_lowpass_filter_naive_ecog.stateChanged.connect(
+    #         self.handle_checkbox_lowpass_filter_naive_ecog_stateChanged)
+    #     layout_visualization_parameters_checkbox.addWidget(checkbox_lowpass_filter_naive_ecog)
+    #
+    #     return widget_visualization
 
-        separator = QtWidgets.QFrame()
-        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        layout_visualization.addWidget(separator)
+    # def handle_button_visualization_type_buttonClicked(self):
+    #     selected_button = self.button_group_visualization_type.checkedButton()
+    #     self.em.trigger('update config.visualizer.vis_view', selected_button.text())
 
-        label_visualization = QtWidgets.QLabel("Visualization")
-        label_visualization.setObjectName("visualization_label")
-        layout_visualization.addWidget(label_visualization)
+    # def handle_button_visualization_parameters_clicked(self, button, widget):
+    #     visualization_parameters_window = VisualizationParametersWindow(self.config, self.em)
+    #     # visualization_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
+    #     visualization_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
+    #     x = widget.geometry().x() + widget.geometry().width()
+    #     y = widget.geometry().y() - 100
+    #     visualization_parameters_window.move(x, y)
+    #     visualization_parameters_window.setWindowFlags(
+    #         visualization_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
+    #     visualization_parameters_window.setWindowFlags(
+    #         visualization_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
+    #     visualization_parameters_window.exec()
 
-        button_visualization_parameters = QtWidgets.QPushButton("Parameters")
-        button_visualization_parameters.setObjectName("button_experiment_parameters")
-        button_visualization_parameters.clicked.connect(
-            partial(self.handle_button_visualization_parameters_clicked, button_visualization_parameters, widget_visualization)
-        )
-        layout_visualization.addWidget(button_visualization_parameters)
-
-        layout_visualization_settings = QtWidgets.QHBoxLayout()
-        widget_visualization_settings = QtWidgets.QWidget()
-        widget_visualization_settings.setLayout(layout_visualization_settings)
-        layout_visualization.addWidget(widget_visualization_settings)
-
-        layout_visualization_type = QtWidgets.QVBoxLayout()
-        widget_visualization_type = QtWidgets.QWidget()
-        widget_visualization_type.setLayout(layout_visualization_type)
-        layout_visualization_settings.addWidget(widget_visualization_type)
-
-        self.button_group_visualization_type = QtWidgets.QButtonGroup()
-        visualization_types = ["ECoG", "Spec", "hgECoG", "hgSpec", "hgA"]
-        for visualization_type in visualization_types:
-            radio_button = QtWidgets.QRadioButton(visualization_type)
-            radio_button.setObjectName(visualization_type)
-            self.button_group_visualization_type.addButton(radio_button)
-            layout_visualization_type.addWidget(radio_button)
-        self.button_group_visualization_type.setExclusive(True)
-        self.button_group_visualization_type.buttonClicked.connect(self.handle_button_visualization_type_buttonClicked)
-        self.button_group_visualization_type.buttons()[0].setChecked(True)
-
-        layout_visualization_parameters_checkbox = QtWidgets.QVBoxLayout()
-        widget_visualization_parameters_checkbox = QtWidgets.QWidget()
-        widget_visualization_parameters_checkbox.setLayout(layout_visualization_parameters_checkbox)
-        layout_visualization_settings.addWidget(widget_visualization_parameters_checkbox)
-
-        checkbox_notch_filter_naive_ecog = QtWidgets.QCheckBox("eNotch")
-        checkbox_notch_filter_naive_ecog.setChecked(self.config.visualizer.ecog_notch)
-        checkbox_notch_filter_naive_ecog.stateChanged.connect(
-            self.handle_checkbox_notch_filter_naive_ecog_stateChanged)
-        layout_visualization_parameters_checkbox.addWidget(checkbox_notch_filter_naive_ecog)
-
-        checkbox_highpass_filter_naive_ecog = QtWidgets.QCheckBox("eHP")
-        checkbox_highpass_filter_naive_ecog.setChecked(self.config.visualizer.ecog_highpass_filter)
-        checkbox_highpass_filter_naive_ecog.stateChanged.connect(
-            self.handle_checkbox_highpass_filter_naive_ecog_stateChanged)
-        layout_visualization_parameters_checkbox.addWidget(checkbox_highpass_filter_naive_ecog)
-
-        checkbox_lowpass_filter_naive_ecog = QtWidgets.QCheckBox("eLP")
-        checkbox_lowpass_filter_naive_ecog.setChecked(self.config.visualizer.ecog_lowpass_filter)
-        checkbox_lowpass_filter_naive_ecog.stateChanged.connect(
-            self.handle_checkbox_lowpass_filter_naive_ecog_stateChanged)
-        layout_visualization_parameters_checkbox.addWidget(checkbox_lowpass_filter_naive_ecog)
-
-        return widget_visualization
-
-    def handle_button_visualization_type_buttonClicked(self):
-        selected_button = self.button_group_visualization_type.checkedButton()
-        self.em.trigger('update config.visualizer.vis_view', selected_button.text())
-
-    def handle_button_visualization_parameters_clicked(self, button, widget):
-        visualization_parameters_window = VisualizationParametersWindow(self.config, self.em)
-        # visualization_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
-        visualization_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-        x = widget.geometry().x() + widget.geometry().width()
-        y = widget.geometry().y() - 100
-        visualization_parameters_window.move(x, y)
-        visualization_parameters_window.setWindowFlags(
-            visualization_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-        visualization_parameters_window.setWindowFlags(
-            visualization_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-        visualization_parameters_window.exec()
-
-    def handle_checkbox_notch_filter_naive_ecog_stateChanged(self, state):
-        self.em.trigger('update config.visualizer.ecog_notch', state)
-
-    def handle_checkbox_highpass_filter_naive_ecog_stateChanged(self, state):
-        self.em.trigger('update config.visualizer.ecog_highpass_filter', state)
-
-    def handle_checkbox_lowpass_filter_naive_ecog_stateChanged(self, state):
-        self.em.trigger('update config.visualizer.ecog_lowpass_filter', state)
+    # def handle_checkbox_notch_filter_naive_ecog_stateChanged(self, state):
+    #     self.em.trigger('update config.visualizer.ecog_notch', state)
+    #
+    # def handle_checkbox_highpass_filter_naive_ecog_stateChanged(self, state):
+    #     self.em.trigger('update config.visualizer.ecog_highpass_filter', state)
+    #
+    # def handle_checkbox_lowpass_filter_naive_ecog_stateChanged(self, state):
+    #     self.em.trigger('update config.visualizer.ecog_lowpass_filter', state)
 
 
 
@@ -824,7 +823,7 @@ class MainWindow(QtWidgets.QMainWindow):
     #         self.em.trigger('experiment.unpause')
 
     def receiver_dialog(self):
-        receiver_window = ReceiverWindow(self.config,self.em, self.receiver, self.generator_lsl, self.processor, self.timeseries, self.sound, self.timer_connect,self.control_widget)
+        receiver_window = ReceiverWindow(self.config, self.em, self.receiver, self.generator_lsl, self.processor, self.timeseries, self.sound, self.timer_connect,self.control_widget)
         #receiver_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
         receiver_window.exec()
 
@@ -1657,10 +1656,6 @@ class ReceiverWindow(QtWidgets.QDialog):
         separator = QtWidgets.QFrame()
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         layout_receiver.addWidget(separator)
-
-        # label_receiver = QtWidgets.QLabel("Receiver")
-        # label_receiver.setObjectName("receiver_label")
-        # layout_receiver.addWidget(label_receiver)
 
         button_generator_lsl = QtWidgets.QPushButton("GeneratorLSL")
         button_generator_lsl.setCheckable(True)

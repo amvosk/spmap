@@ -41,7 +41,9 @@ class Experiment:
         elif data.__class__.__name__ == 'ControlData':
             self.em.trigger('experiment.transition', data.signal.lower())
         elif data.__class__.__name__ == 'ImageData':
-            self.em.trigger('experiment.present_collection_picture', data.image_name)
+            self.em.trigger('experiment.stimulus_image', data.image_name)
+        elif data.__class__.__name__ == 'BlankData':
+            self.em.trigger('experiment.blank', data.signal.lower())
         else:
             print('experiment failed me')
 

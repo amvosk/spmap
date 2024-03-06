@@ -41,7 +41,8 @@ class PicturesCanvas:
         self.canvas.update()
 
         self.em.register_handler('experiment.transition', self.show_transition_picture)
-        self.em.register_handler('experiment.present_collection_picture', self.show_collection_picture)
+        self.em.register_handler('experiment.stimulus_image', self.show_collection_picture)
+        self.em.register_handler('experiment.blank', self.show_transition_picture)
 
     def show_transition_picture(self, data):
         image_path = 'assets/transitions/{}.jpg'.format(data)
