@@ -10,13 +10,15 @@ from filters import NotchFilterRealtime, ButterFilterRealtime, Downsampler
 
 
 class Processor:
-    def __init__(self, config, em):
+    def __init__(self, config, em, interface):
         # initialize basic configuration
         self.config = config
         self.em = em
+        # self.interface = interface
         # self.recorder = Recorder()
-        self.receiver_queue_input = None
-        self.receiver_queue_output = None
+        # self.receiver_queue_input = interface.receiver.queue_input
+        self.receiver_queue_output = interface.receiver.queue_output
+        self.recorder_queue_input = interface.recorder.queue_input
         self.fs_downsample = 1024
         self.filter_downsample_antialiasing = None
         # self.filter_downsample_antialiasing_hg = None
@@ -28,19 +30,20 @@ class Processor:
         self.ecog_lowpass = None
         self.hg_ecog_bandpass = None
         self.hg_ecog_smoother = None
-
         self.sound_highpass = None
+
+        self.experiment_status = False
 
         self.update_filters(self.config)
         self.em.register_handler('update config.processor.channels', self.update_filters)
         self.em.register_handler('update config.visualizer parameters', self.update_filters)
 
 
-    def set_receiver_queue_input(self, queue):
-        self.receiver_queue_input = queue
-
-    def set_receiver_queue_output(self, queue):
-        self.receiver_queue_output = queue
+    # def set_receiver_queue_input(self, queue):
+    #     self.receiver_queue_input = queue
+    #
+    # def set_receiver_queue_output(self, queue):
+    #     self.receiver_queue_output = queue
 
     def update_filters(self, args=None):
         self.filter_downsample_antialiasing = ButterFilterRealtime(
@@ -49,7 +52,6 @@ class Processor:
             btype='low',
             order=4,
         )
-
 
         self.filter_downsample = Downsampler(self.config.processor.fs, self.config.visualizer.fs_downsample)
         self.spectrum = FFT(
@@ -125,8 +127,30 @@ class Processor:
             if label == 'lost connection, data saved':
                 return
             elif label == 'chunk':
-                chunk_timeseries = data[:,:self.config.receiver.n_channels_max][:,self.config.processor.channels].T
-                chunk_sound = data[:, self.config.receiver.sound_channel_index]
+                data = data.T
+                chunk_timeseries = data[:self.config.receiver.n_channels_max,...][self.config.processor.channels]
+                chunk_sound = data[self.config.receiver.sound_channel_index]
+                chunk_control = data[self.config.receiver.control_channel_index]
+                chunk_stimulus = data[self.config.receiver.stimulus_channel_index]
+
+                start_signal, finish_signal = (1 in chunk_control), (2 in chunk_control)
+                if start_signal:
+                    print('start_signal')
+                if finish_signal:
+                    print('finish_signal')
+
+
+                if start_signal and finish_signal:
+                    self.experiment_status = False
+                elif start_signal:
+                    self.experiment_status = True
+                    self.em.trigger('recorder.run')
+                    self.recorder_queue_input.put(('start', data))
+                elif finish_signal:
+                    self.experiment_status = False
+                    self.recorder_queue_input.put(('finish', data))
+                elif self.experiment_status:
+                    self.recorder_queue_input.put(('data', data))
 
                 chunk_timeseries_notched = self.notch_filter(chunk_timeseries)
 
@@ -170,6 +194,11 @@ class Processor:
                 chunk_sound = self.sound_highpass(chunk_sound)
                 chunk_sound = self.filter_downsample(chunk_sound)
                 update_data_sound(chunk_sound)
+
+                control_sequence = data
+
+
+
 
 
 class FFT:

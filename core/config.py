@@ -166,6 +166,7 @@ class ProcessorConfig:
     def _update_channels(self, channels):
         self.channels = np.copy(channels)
         self.n_channels = np.sum(self.channels).item()
+        self.channel_names = ['channel_{}'.format(i + 1) for i in range(self.n_channels)] + ['sound', 'timestamp', 'control', 'stimulus']
         self.channels_bad = np.zeros(self.n_channels, dtype=bool)
         # print()
         # print(self.channels)

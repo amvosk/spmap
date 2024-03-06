@@ -22,42 +22,8 @@ import string2ascii
 
 from PyQt6.QtCore import QTimer
 
-
 import numpy as np
 import h5py
-
-# 123
-# from abc import ABC, abstractmethod
-# class Recorder:
-#     def __init__(self):
-#         self.memory = []
-#
-#     def add(self, chunk):
-#         # if len(self.memory) > 0:
-#         #     assert self.memory[-1].shape[0] == chunk.shape[0]
-#         self.memory.append(chunk)
-#
-#     def clear(self):
-#         self.memory = []
-#
-#     def save(self, config_recorder):
-#         with h5py.File(str(config_recorder.save_path) + '.h5', 'w') as file:
-#             if len(self.memory) > 0:
-#                 stacked_data = np.concatenate(self.memory, axis=0)
-#                 file['raw_data'] = stacked_data[:, config_recorder.channel_index]
-#             else:
-#                 empty_shape = (0, config_recorder.dataset_width)
-#                 file.create_dataset('raw_data', empty_shape)
-#
-#             file.attrs['fs'] = config_recorder.fs
-#             file.attrs['channel_bads'] = np.asarray(config_recorder.channel_bads)
-#             file.attrs['channel_names'] = '|'.join(config_recorder.channel_names)
-
-            #
-            # file.create_dataset('channel_bads', data=np.asarray(config_recorder.channel_bads))
-            # file.create_dataset('channel_names', data=np.asarray(config_recorder.channel_names))
-            # file.create_dataset('fs', data=np.array(config_recorder.fs))
-
 
 class Recorder:
     def __init__(self, config, em):
@@ -68,8 +34,7 @@ class Recorder:
         # self.stop_event = multiprocessing.Event()
         self.queue_input = multiprocessing.Queue()
         self.queue_output = multiprocessing.Queue()
-
-        # self.stimulus = 0
+        self.em.register_handler('recorder.run', self.run)
 
     def queue_put(self, input_):
         self.queue_input.put(input_)
@@ -83,10 +48,10 @@ class Recorder:
     def queue_size(self):
         return self.queue_output.qsize()
 
-    def run(self, f):
+    def run(self, args=None):
         try:
             self.process = multiprocessing.Process(
-                target=f,
+                target=_run_until_the_end,
                 args=(copy.deepcopy(self.config), self.queue_input, self.queue_output)
             )
             self.process.daemon = True
@@ -106,8 +71,12 @@ class Recorder:
         if self.process.is_alive():
             self.process.terminate()
         self.process = None
-        self.queue_input = queue.Queue()
-        self.queue_output = queue.Queue()
+        while not self.queue_input.empty():
+            self.queue_input.get()
+        while not self.queue_output.empty():
+            self.queue_output.get()
+        # self.queue_input = multiprocessing.Queue()
+        # self.queue_output = multiprocessing.Queue()
 
 
 class Dataset:
@@ -173,12 +142,13 @@ class Dataset:
 
 
     def save_fif(self, data):
-        channel_take = np.concatenate([self.config.receiver.channels, np.asarray([True] * 4)])
+        channel_take = np.concatenate([self.config.processor.channels, np.asarray([True] * 4)])
         data = data[channel_take]
-        ch_names = np.asarray(self.config.processor.channel_names)[channel_take].tolist()
+        # ch_names = np.asarray(self.config.processor.channel_names)[channel_take].tolist()
+        ch_names = self.config.processor.channel_names
         sfreq = self.config.processor.fs
 
-        ch_types = ['ecog' for _ in range(self.config.receiver.n_channels)] + ['stim' for _ in range(4)]
+        ch_types = ['ecog' for _ in range(self.config.processor.n_channels)] + ['stim' for _ in range(4)]
 
         info = mne.create_info(
             ch_names=ch_names,
@@ -195,25 +165,22 @@ class Dataset:
 
 
 def _run_until_the_end(config, queue_input, queue_output):
-    print('hi')
     dataset = None
     stop_flag = 0
     time_cicle = time.perf_counter()
     while True:
         if not queue_input.empty():
             message = queue_input.get(block=False)
-            # print("receiver message{}".format(message))
             if message is None:
                 continue
             label, data = message
             if label == 'start':
                 dataset = Dataset(config)
-                # print(data)
+                dataset.save_chunk(data)
             elif label == 'data':
                 dataset.save_chunk(data)
-                # print(data.shape)
             elif label == 'finish':
-                # print(data)
+                dataset.save_chunk(data)
                 dataset.save_data()
                 stop_flag = 1
         if stop_flag:

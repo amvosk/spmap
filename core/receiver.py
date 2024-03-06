@@ -75,7 +75,6 @@ def resolve_queue_input(flags, queue_input):
                 flags.stimulus_index = value
         except Empty:
             pass
-        print(flags)
     return flags
 
 
@@ -174,16 +173,16 @@ class Receiver:
 
 
 
-    def stimulus_check(self, queue): #queue из experiment --> _debug_example
-        try: 
-            value = queue.get(block=False)
-            if(value == 'blink' or value == 'pause' or value == 'finish'):
-                #flags = self.queue_input.get()
-                self.stimulus = 0
-            else: 
-                self.stimulus = 1
-        except Empty:
-            pass
+    # def stimulus_check(self, queue): #queue из experiment --> _debug_example
+    #     try:
+    #         value = queue.get(block=False)
+    #         if(value == 'blink' or value == 'pause' or value == 'finish'):
+    #             #flags = self.queue_input.get()
+    #             self.stimulus = 0
+    #         else:
+    #             self.stimulus = 1
+    #     except Empty:
+    #         pass
 
 
 
@@ -218,8 +217,12 @@ class Receiver:
             self.receiver_process.terminate()
         self.receiver_process = None
         self.stop_event = multiprocessing.Event()
-        self.queue_input = multiprocessing.Queue()
-        self.queue_output = multiprocessing.Queue()
+        while not self.queue_input.empty():
+            self.queue_input.get()
+        # while not self.queue_output.empty():
+        #     self.queue_output.get()
+        # self.queue_input = multiprocessing.Queue()
+        # self.queue_output = multiprocessing.Queue()
 
 
 if __name__ == '__main__':

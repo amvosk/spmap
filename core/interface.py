@@ -17,6 +17,7 @@ from config import LocalConfig
 sys.path.insert(0, '../generation/')
 from generator import GeneratorLSL
 from receiver import Receiver
+from recorder import Recorder
 from processor import Processor
 from experiment import Experiment
 from stimulus import Stimulus
@@ -36,11 +37,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.em = em
         self.config_local = LocalConfig(self.config, self.em)
 
-        self.amplifiers = [self.config.receiver.lsl_stream_name_debug]
-        self.processor = Processor(self.config, self.em)
+        # self.amplifiers = [self.config.receiver.lsl_stream_name_debug]
+        self.receiver = Receiver(self.config, self.em)
+        self.recorder = Recorder(self.config, self.em)
+        self.processor = Processor(self.config, self.em, self)
         self.experiment = Experiment(self.config, self.em, self)
         self.stimulus = Stimulus(self.config, self.em)
-        self.receiver = Receiver(self.config, self.em)
         self.generator_lsl = GeneratorLSL(self.config, self.em)
 
         self.timer_connect = QtCore.QTimer(self) 
@@ -72,8 +74,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.brain_checkbox = []
         self.create_brain_checkbox()
         self.em.register_handler('update config.processor.channels', self.create_brain_checkbox)
-        # self.em.register_handler('update config.recorder.channels_bad', self._update_parameters)
-        # self.em.register_handler('update brain_checkbox_height', self.update_brain_checkbox_height)
 
         widget_splitter_timeseries = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
         splitter_checkboxes_ecog = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
@@ -162,24 +162,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         # Call your function here
         if self.receiver is not None:
-            self.receiver.clear()
+            self.receiver.terminate()
         if self.generator_lsl is not None:
             self.generator_lsl.stop()
         # Accept the close event to close the window
         event.accept()
-
-    # def handle_currentTextChanged_amplifier(self, field_ip_address, amplifier):
-    #     if amplifier.currentText() == "EBNeuro_BePLusLTM":
-    #         field_ip_address.setVisible(True)
-    #     else:
-    #         field_ip_address.setVisible(False)
-    #     self.em.trigger('update config.receiver.amplifier', amplifier.currentText())
-
-    # def handle_textChanged_ip_address(self, ip_address):
-    #     self.em.trigger('update config.receiver.amplifier_ip', ip_address.text())
-
-    # def handle_textChanged_fs(self, fs):
-    #     self.em.trigger('update config.receiver.fs', fs.text())
 
     def create_brain_checkbox(self, args=None):
         while self.layout_brain_checkbox.count():
@@ -206,58 +193,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.brain_checkbox.append(checkbox)
             self.layout_brain_checkbox.addWidget(checkbox)
 
-    # def update_brain_checkbox(self, args):
-    #     for i, state in enumerate(self.config.processor.channels):
-    #         checkbox = self.brain_checkbox[i]
-    #         checkbox.setVisible(state)
-
 
     def handle_stateChanged_brain_checkbox(self, state, index):
         self.em.trigger('update config.processor.channels_bad', (index, state))
-        # print(self.config.processor.channels_bad)
-
-    # def update_brain_checkbox_height(self, height):
-    #     self.widget_brain_checkbox.setFixedHeight(height)
-
-    # def handle_button_generator_lsl(self, button, checked):
-    #     if checked:
-    #         button.setStyleSheet("background-color: blue; color: white;")
-    #         self.generator_lsl = GeneratorLSL(self.config, self.em)
-    #         self.generator_lsl.start()
-    #     else:
-    #         button.setStyleSheet("")
-    #         self.generator_lsl.stop()
-    #         self.generator_lsl = None
-
-    # def handle_button_connect(self, button, layout_receiver, checked):
-    #     if checked:
-    #         button.setStyleSheet("background-color: blue; color: white;")
-    #         for i in range(layout_receiver.count()):
-    #             widget = layout_receiver.itemAt(i).widget()
-    #             if widget.objectName() not in ["connect_button", 'receiver_label']:
-    #                 widget.setDisabled(True)
-    #         self.receiver = Receiver(self.config, self.em)
-    #         self.receiver.connect()
-    #
-    #         self.processor.set_receiver_queue_input(self.receiver.queue_input)
-    #         self.processor.set_receiver_queue_output(self.receiver.queue_output)
-    #         self.timer_connect = QtCore.QTimer(self)
-    #         self.timer_connect.timeout.connect(
-    #             partial(self.processor.on_timer, self.timeseries.update_data, self.sound.update_data)
-    #         )
-    #         self.timer_connect.start(30)
-    #     else:
-    #         button.setStyleSheet("")
-    #         for i in range(layout_receiver.count()):
-    #             widget = layout_receiver.itemAt(i).widget()
-    #             if widget.objectName() not in ["connect_button", 'receiver_label']:
-    #                 widget.setDisabled(False)
-    #         self.timer_connect.stop()
-    #         self.timer_connect = None
-    #         self.receiver.disconnect()
-    #         self.receiver = None
-    #         self.processor.set_receiver_queue_input(None)
-    #         self.processor.set_receiver_queue_output(None)
 
     def create_menu_bar(self):
         menu_bar = self.menuBar()
@@ -444,7 +382,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         def get_start_icon():
             return start_icon
-            
+
 
         def icon_clicked(icon_path): #передавать сюда сам объект виджета кнопки чтобы менять его стиль при нажатии
             active_icon ="background-color: gray; border: none; opacity: 0.1; border-radius: 6px;"
@@ -453,19 +391,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 #icon_path.setIcon(QIcon(icons_path + "pause.svg"))
                 ## self.start()
             elif icon_path == receiver_icon:
+                self.receiver_dialog()
                 #icon_path.setStyleSheet(active_icon)
                 #icon_path.setIconSize(QtCore.QSize(40,40))
                 #icon_path.setIcon(QIcon(icons_path + "receiver_active.svg"))
-                self.receiver_dialog()
             elif icon_path == settings_icon:
                 self.vizualizer_dialog()
-                pass
                 #icon_path.setIconSize(QtCore.QSize(40,40))
                 #icon_path.setStyleSheet(active_icon)
                 #self.receiver_dialog()
             elif icon_path == eloq_icon:
                 self.experiment_dialog()
-                pass
                 #icon_path.setIconSize(QtCore.QSize(40,40))
                 #icon_path.setStyleSheet(active_icon)
                 #self.experiment_dialog()
@@ -473,9 +409,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 #icon_path.setIconSize(QtCore.QSize(40,40))
                 #icon_path.setStyleSheet(active_icon)
                 self.patient_dialog()
-                #self.experiment_dialog()
-                
-        
+
+
         control_layout.addWidget(start_icon)
         control_layout.addWidget(receiver_icon)
         control_layout.addWidget(settings_icon)
@@ -491,336 +426,6 @@ class MainWindow(QtWidgets.QMainWindow):
         
         return control_widget
 
-
-
-
-    # def create_patient_info_widget(self):
-    #     layout_patient_info = QtWidgets.QVBoxLayout()
-    #     widget_patient_info = QtWidgets.QWidget()
-    #     widget_patient_info.setLayout(layout_patient_info)
-    #
-    #     separator = QtWidgets.QFrame()
-    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-    #     layout_patient_info.addWidget(separator)
-    #
-    #     label_patient_name = QtWidgets.QLabel("Patient Info")
-    #     layout_patient_info.addWidget(label_patient_name)
-    #
-    #     layout_patient_values = QtWidgets.QFormLayout()
-    #     widget_patient_values = QtWidgets.QWidget()
-    #     widget_patient_values.setLayout(layout_patient_values)
-    #     layout_patient_info.addWidget(widget_patient_values)
-    #
-    #     line_patient_name = QtWidgets.QLineEdit()
-    #     line_patient_name.setText(str(self.config.patient_info.patient_name))
-    #     line_patient_name.textChanged.connect(partial(self.handle_patient_name_textChanged, line_patient_name))
-    #     layout_patient_values.addRow("patient name", line_patient_name)
-    #
-    #     line_patient_data_path = QtWidgets.QLineEdit()
-    #     line_patient_data_path.setText(str(self.config.paths.patient_data_path))
-    #     line_patient_data_path.setEnabled(False)
-    #     # line_patient_data_path.textChanged.connect(partial(self.handle_patient_name_textChanged, line_patient_data_path))
-    #     layout_patient_values.addRow("patient data", line_patient_data_path)
-    #
-    #     return widget_patient_info
-    #
-    # def handle_patient_name_textChanged(self, line_patient_name):
-    #     self.em.trigger('update config.patient_info.patient_name', line_patient_name.text())
-
-    #
-    # def create_receiver_widget(self):
-    #     layout_receiver = QtWidgets.QVBoxLayout()
-    #     widget_receiver = QtWidgets.QWidget()
-    #     widget_receiver.setLayout(layout_receiver)
-    #
-    #     separator = QtWidgets.QFrame()
-    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-    #     layout_receiver.addWidget(separator)
-    #
-    #     button_generator_lsl = QtWidgets.QPushButton("GeneratorLSL")
-    #     button_generator_lsl.setCheckable(True)
-    #     button_generator_lsl.setChecked(False)
-    #     button_generator_lsl.toggled.connect(partial(self.handle_button_generator_lsl, button_generator_lsl))
-    #     layout_receiver.addWidget(button_generator_lsl)
-    #
-    #     form_layout = QtWidgets.QFormLayout()
-    #     form_widget = QtWidgets.QWidget()
-    #     form_widget.setLayout(form_layout)
-    #     layout_receiver.addWidget(form_widget)
-    #
-    #     self.amplifiers = [self.config.receiver.amplifier] + self.amplifiers
-    #     selection_amplifier = QtWidgets.QComboBox()
-    #     for amplifier in self.amplifiers:
-    #         selection_amplifier.addItem(amplifier)
-    #     field_ip_address = QtWidgets.QLineEdit()
-    #     selection_amplifier.currentTextChanged.connect(
-    #         partial(self.handle_currentTextChanged_amplifier, field_ip_address, selection_amplifier)
-    #     )
-    #     form_layout.addRow("Amp", selection_amplifier)
-    #
-    #     selected_amplifier = selection_amplifier.currentText()
-    #     field_ip_address.setText(self.config.receiver.amplifier_ip)
-    #     if selected_amplifier != "EBNeuro_BePLusLTM":
-    #         field_ip_address.setVisible(False)
-    #     field_ip_address.textChanged.connect(partial(self.handle_textChanged_ip_address, field_ip_address))
-    #     form_layout.addRow("IP", field_ip_address)
-    #
-    #     field_fs = QtWidgets.QLineEdit()
-    #     field_fs.setText(str(self.config.receiver.fs))
-    #     field_fs.textChanged.connect(partial(self.handle_textChanged_fs, field_fs))
-    #     form_layout.addRow("fs", field_fs)
-    #
-    #     button_select_channels = QtWidgets.QPushButton("Select Channels")
-    #     button_select_channels.clicked.connect(
-    #         partial(self.handle_button_select_channels_clicked, button_select_channels, widget_receiver)
-    #     )
-    #     layout_receiver.addWidget(button_select_channels)
-    #
-    #     button_connect = QtWidgets.QPushButton("Connect")
-    #     button_connect.setObjectName("connect_button")
-    #     button_connect.setCheckable(True)
-    #     button_connect.setChecked(False)
-    #     button_connect.toggled.connect(partial(self.handle_button_connect, button_connect, layout_receiver))
-    #     layout_receiver.addWidget(button_connect)
-    #
-    #     return widget_receiver
-
-    # def handle_button_select_channels_clicked(self, button, widget):
-    #     select_channels_window = SelectChannelsWindow(self.em, self.config)
-    #     select_channels_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-    #     x = widget.geometry().x() + widget.geometry().width()
-    #     # y = button.geometry().y() + int(select_channels_window.geometry().height() / 2)
-    #     y = widget.geometry().y()
-    #     select_channels_window.move(x, y)
-    #     select_channels_window.setWindowFlags(
-    #         select_channels_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-    #     select_channels_window.setWindowFlags(
-    #         select_channels_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-    #     select_channels_window.exec()
-
-
-    # def create_visualization_widget(self):
-    #     layout_visualization = QtWidgets.QVBoxLayout()
-    #     widget_visualization = QtWidgets.QWidget()
-    #     widget_visualization.setLayout(layout_visualization)
-    #
-    #     separator = QtWidgets.QFrame()
-    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-    #     layout_visualization.addWidget(separator)
-    #
-    #     label_visualization = QtWidgets.QLabel("Visualization")
-    #     label_visualization.setObjectName("visualization_label")
-    #     layout_visualization.addWidget(label_visualization)
-    #
-    #     button_visualization_parameters = QtWidgets.QPushButton("Parameters")
-    #     button_visualization_parameters.setObjectName("button_experiment_parameters")
-    #     button_visualization_parameters.clicked.connect(
-    #         partial(self.handle_button_visualization_parameters_clicked, button_visualization_parameters, widget_visualization)
-    #     )
-    #     layout_visualization.addWidget(button_visualization_parameters)
-    #
-    #     layout_visualization_settings = QtWidgets.QHBoxLayout()
-    #     widget_visualization_settings = QtWidgets.QWidget()
-    #     widget_visualization_settings.setLayout(layout_visualization_settings)
-    #     layout_visualization.addWidget(widget_visualization_settings)
-    #
-    #     layout_visualization_type = QtWidgets.QVBoxLayout()
-    #     widget_visualization_type = QtWidgets.QWidget()
-    #     widget_visualization_type.setLayout(layout_visualization_type)
-    #     layout_visualization_settings.addWidget(widget_visualization_type)
-    #
-    #     self.button_group_visualization_type = QtWidgets.QButtonGroup()
-    #     visualization_types = ["ECoG", "Spec", "hgECoG", "hgSpec", "hgA"]
-    #     for visualization_type in visualization_types:
-    #         radio_button = QtWidgets.QRadioButton(visualization_type)
-    #         radio_button.setObjectName(visualization_type)
-    #         self.button_group_visualization_type.addButton(radio_button)
-    #         layout_visualization_type.addWidget(radio_button)
-    #     self.button_group_visualization_type.setExclusive(True)
-    #     self.button_group_visualization_type.buttonClicked.connect(self.handle_button_visualization_type_buttonClicked)
-    #     self.button_group_visualization_type.buttons()[0].setChecked(True)
-    #
-    #     layout_visualization_parameters_checkbox = QtWidgets.QVBoxLayout()
-    #     widget_visualization_parameters_checkbox = QtWidgets.QWidget()
-    #     widget_visualization_parameters_checkbox.setLayout(layout_visualization_parameters_checkbox)
-    #     layout_visualization_settings.addWidget(widget_visualization_parameters_checkbox)
-    #
-    #     checkbox_notch_filter_naive_ecog = QtWidgets.QCheckBox("eNotch")
-    #     checkbox_notch_filter_naive_ecog.setChecked(self.config.visualizer.ecog_notch)
-    #     checkbox_notch_filter_naive_ecog.stateChanged.connect(
-    #         self.handle_checkbox_notch_filter_naive_ecog_stateChanged)
-    #     layout_visualization_parameters_checkbox.addWidget(checkbox_notch_filter_naive_ecog)
-    #
-    #     checkbox_highpass_filter_naive_ecog = QtWidgets.QCheckBox("eHP")
-    #     checkbox_highpass_filter_naive_ecog.setChecked(self.config.visualizer.ecog_highpass_filter)
-    #     checkbox_highpass_filter_naive_ecog.stateChanged.connect(
-    #         self.handle_checkbox_highpass_filter_naive_ecog_stateChanged)
-    #     layout_visualization_parameters_checkbox.addWidget(checkbox_highpass_filter_naive_ecog)
-    #
-    #     checkbox_lowpass_filter_naive_ecog = QtWidgets.QCheckBox("eLP")
-    #     checkbox_lowpass_filter_naive_ecog.setChecked(self.config.visualizer.ecog_lowpass_filter)
-    #     checkbox_lowpass_filter_naive_ecog.stateChanged.connect(
-    #         self.handle_checkbox_lowpass_filter_naive_ecog_stateChanged)
-    #     layout_visualization_parameters_checkbox.addWidget(checkbox_lowpass_filter_naive_ecog)
-    #
-    #     return widget_visualization
-
-    # def handle_button_visualization_type_buttonClicked(self):
-    #     selected_button = self.button_group_visualization_type.checkedButton()
-    #     self.em.trigger('update config.visualizer.vis_view', selected_button.text())
-
-    # def handle_button_visualization_parameters_clicked(self, button, widget):
-    #     visualization_parameters_window = VisualizationParametersWindow(self.config, self.em)
-    #     # visualization_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
-    #     visualization_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-    #     x = widget.geometry().x() + widget.geometry().width()
-    #     y = widget.geometry().y() - 100
-    #     visualization_parameters_window.move(x, y)
-    #     visualization_parameters_window.setWindowFlags(
-    #         visualization_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-    #     visualization_parameters_window.setWindowFlags(
-    #         visualization_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-    #     visualization_parameters_window.exec()
-
-    # def handle_checkbox_notch_filter_naive_ecog_stateChanged(self, state):
-    #     self.em.trigger('update config.visualizer.ecog_notch', state)
-    #
-    # def handle_checkbox_highpass_filter_naive_ecog_stateChanged(self, state):
-    #     self.em.trigger('update config.visualizer.ecog_highpass_filter', state)
-    #
-    # def handle_checkbox_lowpass_filter_naive_ecog_stateChanged(self, state):
-    #     self.em.trigger('update config.visualizer.ecog_lowpass_filter', state)
-
-
-
-    # def create_experiment_widget(self):
-    #     layout_experiment = QtWidgets.QVBoxLayout()
-    #     widget_experiment = QtWidgets.QWidget()
-    #     widget_experiment.setLayout(layout_experiment)
-    #
-    #     separator = QtWidgets.QFrame()
-    #     separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-    #     layout_experiment.addWidget(separator)
-    #
-    #     layout_selection_split = QtWidgets.QFormLayout()
-    #     widget_selection_split = QtWidgets.QWidget()
-    #     widget_selection_split.setLayout(layout_selection_split)
-    #     # widget_experiment_parameters_iteration.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-    #     layout_experiment.addWidget(widget_selection_split)
-    #
-    #     selection_split = QtWidgets.QComboBox()
-    #     selection_split.setObjectName("selection_split")
-    #     for i in range(self.config.experiment.n_splits):
-    #         selection_split.addItem(str(i+1))
-    #     selection_split.setCurrentText('1')
-    #     selection_split.currentTextChanged.connect(
-    #         partial(self.handle_selection_split_currentTextChanged, selection_split)
-    #     )
-    #     # self.em.register_handler('update selection split', partial(self._reset_selection_split, selection_split))
-    #     # self.em.trigger('update selection split')
-    #     # self.em.trigger('update local.splits_values', self.stimulus)
-    #     # layout_selection_split.addRow("split", selection_split)
-    #
-    #     button_experiment_start = QtWidgets.QPushButton("Start")
-    #     button_experiment_start.setObjectName("start_button")
-    #     button_experiment_start.setCheckable(True)
-    #     button_experiment_start.setChecked(False)
-    #     button_experiment_start.setDisabled(False)
-    #     button_experiment_start.toggled.connect(
-    #         partial(self.handle_button_experiment_start, button_experiment_start, layout_experiment)
-    #     )
-    #     layout_experiment.addWidget(button_experiment_start)
-    #
-    #     button_experiment_pause = QtWidgets.QPushButton("Pause")
-    #     button_experiment_pause.setObjectName("pause_button")
-    #     button_experiment_pause.setCheckable(True)
-    #     button_experiment_pause.setChecked(True)
-    #     button_experiment_pause.setDisabled(True)
-    #     button_experiment_pause.toggled.connect(
-    #         partial(self.handle_button_experiment_pause, button_experiment_pause, layout_experiment)
-    #     )
-    #     layout_experiment.addWidget(button_experiment_pause)
-    #
-    #     return widget_experiment
-
-    # def _reset_selection_split(self, selection_split, args):
-    #     selection_split.blockSignals(True)
-    #     selection_split.clear()
-    #     for i in range(self.config.experiment.n_splits):
-    #         selection_split.addItem(str(i+1))
-    #     selection_split.blockSignals(False)
-    #     selection_split.setCurrentText('1')
-    #     self.handle_selection_split_currentTextChanged(selection_split)
-
-    # def handle_button_experiment_parameters_clicked(self, button, widget):
-    #     experiment_parameters_window = ExperimentParametersWindow(self.config, self.em, self.stimulus)
-    #     experiment_parameters_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-    #     x = widget.geometry().x() + widget.geometry().width()
-    #     y = widget.geometry().y() - 100
-    #     # y = button.geometry().y()# + int(select_channels_window.geometry().height() / 2)
-    #     experiment_parameters_window.move(x, y)
-    #     experiment_parameters_window.setWindowFlags(
-    #         experiment_parameters_window.windowFlags() | QtCore.Qt.WindowType.CustomizeWindowHint)
-    #     experiment_parameters_window.setWindowFlags(
-    #         experiment_parameters_window.windowFlags() & ~QtCore.Qt.WindowType.WindowCloseButtonHint)
-    #     experiment_parameters_window.exec()
-
-    # def handle_selection_split_currentTextChanged(self, selection_split):
-    #     self.em.trigger('update local.split', int(selection_split.currentText())-1)
-    #     # print('update local.split', int(selection_split.currentText())-1)
-    #
-    # def handle_button_experiment_start(self, button, layout, checked):
-    #     if checked:
-    #         button.setStyleSheet("background-color: blue; color: white;")
-    #         button.setText("Stop")
-    #         for i in range(layout.count()):
-    #             widget = layout.itemAt(i).widget()
-    #             if widget.objectName() in ["pause_button"]:
-    #                 widget.setChecked(False)
-    #                 widget.setDisabled(False)
-    #             if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
-    #                 widget.setDisabled(True)
-    #         self.em.trigger('experiment.start')
-    #         self.timer_experiment = QtCore.QTimer(self)
-    #
-    #         def put_experiment_data(queue):
-    #             if(queue.empty()): return
-    #             data = queue.get(block = False)
-    #             if(self.receiver):
-    #                 self.canvas_pictures.update_image(data)
-    #                 #self.receiver.stimulus_check(data)
-    #                 self.receiver.queue_put(data)
-    #             else:
-    #                 self.canvas_pictures.update_image(data)
-    #
-    #         self.timer_experiment.timeout.connect(
-    #             lambda: put_experiment_data(self.experiment.queue_output))
-    #         self.timer_experiment.start(1)
-    #
-    #     else:
-    #         button.setStyleSheet("")
-    #         button.setText("Start")
-    #         for i in range(layout.count()):
-    #             widget = layout.itemAt(i).widget()
-    #             if widget.objectName() in ['pause_button']:
-    #                 widget.setChecked(True)
-    #                 widget.setDisabled(True)
-    #                 widget.setStyleSheet("")
-    #             if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
-    #                 widget.setDisabled(False)
-    #         self.em.trigger('experiment.stop')
-    #         self.timer_experiment.stop()
-    #         self.timer_experiment = None
-    #
-    #
-    #
-    # def handle_button_experiment_pause(self, button, layout, checked):
-    #     if checked:
-    #         button.setStyleSheet("background-color: blue; color: white;")
-    #         self.em.trigger('experiment.pause')
-    #     else:
-    #         button.setStyleSheet("")
-    #         self.em.trigger('experiment.unpause')
 
     def receiver_dialog(self):
         receiver_window = ReceiverWindow(self.config, self.em, self.receiver, self.generator_lsl, self.processor, self.timeseries, self.sound, self.timer_connect,self.control_widget)
@@ -1422,12 +1027,8 @@ class SelectChannelsWindow(QtWidgets.QDialog):
         n_channels = np.sum(self.channels).item()
         if n_channels > self.n_channels_grid:
             return
-        # self.em.trigger('update config.processor.n_channels_grid', self.n_channels_grid)
-        # self.em.trigger('update config.processor.n_rows', self.n_rows)
-        # self.em.trigger('update config.processor.n_columns', self.n_columns)
         self.em.trigger('update config.processor.grid_type', self.grid_type)
         self.em.trigger('update config.processor.channels', self.channels)
-        # self.em.trigger('update brain_checkbox_height', self.timeseries.config_local.height)
         self.close()
 
     def handle_clicked_button_channels_cancel(self):
@@ -1476,16 +1077,9 @@ class ExperimentWindow(QtWidgets.QDialog):
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         layout_experiment.addWidget(separator)
 
-        label_experiment = QtWidgets.QLabel("Experiment")
-        label_experiment.setObjectName("experiment_label")
-        layout_experiment.addWidget(label_experiment)
-
-        # button_experiment_parameters = QtWidgets.QPushButton("Parameters")
-        # button_experiment_parameters.setObjectName("button_experiment_parameters")
-        # button_experiment_parameters.clicked.connect(
-        #     partial(self.handle_button_experiment_parameters_clicked, button_experiment_parameters, self)
-        # )
-        # layout_experiment.addWidget(button_experiment_parameters)
+        # label_experiment = QtWidgets.QLabel("Experiment")
+        # label_experiment.setObjectName("experiment_label")
+        # layout_experiment.addWidget(label_experiment)
 
         layout_connection_status = QtWidgets.QFormLayout()
         widget_connection_status = QtWidgets.QWidget()
@@ -1535,53 +1129,11 @@ class ExperimentWindow(QtWidgets.QDialog):
             self.connection_status = True
             button.setStyleSheet("background-color: blue; color: white;")
             button.setText("Disconnect")
-
-            # self.timer_experiment = QtCore.QTimer(self)
-
-            # def put_experiment_data(queue):
-            #     if(queue.empty()): return
-            #     self.experiment.connection_status = True
-            #     data = queue.get(block=False)
-            #
-            #     def update_patient(patient):
-            #         self.em.trigger('update config.patient_info.patient_name', patient.name)
-            #         self.em.trigger('update config.patient_info.patient_date', patient.birthDate)
-            #         self.em.trigger('update config.patient_info.patient_hospital', patient.hospital)
-            #         self.em.trigger('update config.patient_info.patient_history_id', patient.historyID)
-            #         self.em.trigger('update config.patient_info.patient_hospitalization_date', patient.hospitalizationDate)
-            #         #self.em.trigger('save_config', None)
-            #         print('Пациент добавлен',self.config.patient_info)
-            #
-            #     if(data.__class__.__name__== 'PatientData'):
-            #         update_patient(data)
-            #         return
-            #
-            #     if(self.receiver):
-            #         self.canvas_pictures.update_image(data)
-            #         self.receiver.queue_put(data)
-            #     else:
-            #         self.canvas_pictures.update_image(data)
-            #
-            # self.timer_experiment.timeout.connect(
-            #     lambda: put_experiment_data(self.experiment.queue_output))
-            # self.timer_experiment.start(1)
-
         else:
             self.experiment.clear()
             self.connection_status = False
             button.setStyleSheet("")
             button.setText("Connect")
-            # for i in range(layout.count()):
-            #     widget = layout.itemAt(i).widget()
-            #     if widget.objectName() in ['pause_button']:
-            #         widget.setChecked(True)
-            #         widget.setDisabled(True)
-            #         widget.setStyleSheet("")
-            #     if widget.objectName() in ["button_experiment_parameters", 'selection_split']:
-            #         widget.setDisabled(False)
-            # self.em.trigger('experiment.stop')
-            #self.timer_experiment.stop()
-            #self.timer_experiment = None
 
 
 class PatientWindow(QtWidgets.QDialog):
@@ -1748,8 +1300,8 @@ class ReceiverWindow(QtWidgets.QDialog):
             print("connect")
             self.receiver.connect()
 
-            self.processor.set_receiver_queue_input(self.receiver.queue_input)
-            self.processor.set_receiver_queue_output(self.receiver.queue_output)
+            # self.processor.set_receiver_queue_input(self.receiver.queue_input)
+            # self.processor.set_receiver_queue_output(self.receiver.queue_output)
             #self.timer_connect = QtCore.QTimer(self)
             self.timer_connect.timeout.connect(
                 partial(self.processor.on_timer, self.timeseries.update_data, self.sound.update_data)
@@ -1769,8 +1321,8 @@ class ReceiverWindow(QtWidgets.QDialog):
             # self.receiver.receiver_process.terminate()
             # self.receiver.receiver_process = None
             self.receiver.clear()
-            self.processor.set_receiver_queue_input(None)
-            self.processor.set_receiver_queue_output(None)
+            # self.processor.set_receiver_queue_input(None)
+            # self.processor.set_receiver_queue_output(None)
     
     def handle_currentTextChanged_amplifier(self, field_ip_address, amplifier):
         if amplifier.currentText() == "EBNeuro_BePLusLTM":
