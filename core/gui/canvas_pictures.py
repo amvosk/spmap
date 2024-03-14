@@ -40,9 +40,13 @@ class PicturesCanvas:
         self.view.update()
         self.canvas.update()
 
-        self.em.register_handler('experiment.transition', self.show_transition_picture)
+        self.em.register_handler('experiment.start', lambda _: self.show_transition_picture('start'))
+        self.em.register_handler('experiment.finish', lambda _: self.show_transition_picture('finish'))
+        self.em.register_handler('experiment.pause', lambda _: self.show_transition_picture('pause'))
+        self.em.register_handler('experiment.resume', lambda _: self.show_transition_picture('resume'))
+        self.em.register_handler('experiment.blank', lambda _: self.show_transition_picture('blank'))
         self.em.register_handler('experiment.stimulus_image', self.show_collection_picture)
-        self.em.register_handler('experiment.blank', self.show_transition_picture)
+        # self.em.register_handler('experiment.blank', self.show_transition_picture)
 
     def show_transition_picture(self, data):
         image_path = 'assets/transitions/{}.jpg'.format(data)

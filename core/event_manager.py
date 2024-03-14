@@ -16,8 +16,11 @@ class EventManager:
             self.handlers[event].remove(handler)
 
     def trigger(self, event, data=None):
+        non_verbose = ['processor.chunk_record']
         if event in self.handlers:
-            print()
+            if event not in non_verbose:
+                print()
             for handler in self.handlers[event]:
-                print(event, handler.__name__)
+                if event not in non_verbose:
+                    print(event, handler.__name__)
                 handler(data)

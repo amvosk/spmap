@@ -31,38 +31,38 @@ class Recorder:
         self.config = config
         self.em = em
         self.process = None
-        # self.stop_event = multiprocessing.Event()
+        self.event_finish = multiprocessing.Event()
+        self.event_pause = multiprocessing.Event()
         self.queue_input = multiprocessing.Queue()
-        self.queue_output = multiprocessing.Queue()
-        self.em.register_handler('recorder.run', self.run)
+        self.em.register_handler('experiment.start', self.run)
+        self.em.register_handler('experiment.finish', lambda _: self.event_finish.set())
+        self.em.register_handler('experiment.pause', lambda _: self.event_pause.set())
+        self.em.register_handler('experiment.resume', lambda _: self.event_pause.clear())
+        self.em.register_handler('processor.chunk_record', self.record_chunk)
 
-    def queue_put(self, input_):
-        self.queue_input.put(input_)
 
-    def queue_get(self):
-        return self.queue_output.get()
-
-    def queue_empty(self):
-        return self.queue_output.empty()
-
-    def queue_size(self):
-        return self.queue_output.qsize()
+    def record_chunk(self, chunk):
+        if self.config.control.recorder_run:
+            if (self.process is not None) and self.process.is_alive():
+                self.queue_input.put(chunk)
 
     def run(self, args=None):
-        try:
-            self.process = multiprocessing.Process(
-                target=_run_until_the_end,
-                args=(copy.deepcopy(self.config), self.queue_input, self.queue_output)
-            )
-            self.process.daemon = True
-            self.process.start()
-
-        except Exception:
-            print('process stopped')
-            if self.process.is_alive():
-                self.process.join()
-            if self.process.is_alive():
-                self.process.terminate()
+        if self.config.control.receiver_run:
+            try:
+                self.process = multiprocessing.Process(
+                    target=_recorder_run,
+                    args=(copy.deepcopy(self.config), self.queue_input, self.event_pause, self.event_finish)
+                )
+                self.process.daemon = True
+                self.process.start()
+                self.em.trigger('update config.control.recorder_run', True)
+            except Exception:
+                print('process stopped')
+                if self.process.is_alive():
+                    self.process.join()
+                if self.process.is_alive():
+                    self.process.terminate()
+                self.em.trigger('update config.control.recorder_run', False)
 
 
     def clear(self):
@@ -73,8 +73,12 @@ class Recorder:
         self.process = None
         while not self.queue_input.empty():
             self.queue_input.get()
-        while not self.queue_output.empty():
-            self.queue_output.get()
+        self.event_finish.clear()
+        self.event_pause.clear()
+        self.em.trigger('update config.control.recorder_run', True)
+
+        # while not self.queue_output.empty():
+        #     self.queue_output.get()
         # self.queue_input = multiprocessing.Queue()
         # self.queue_output = multiprocessing.Queue()
 
@@ -102,7 +106,6 @@ class Dataset:
             hdf_file.create_dataset('data', (0, *self.data_shape), maxshape=(None, *self.data_shape), chunks=(1, *self.data_shape))
 
     def _write_chunk_buffer(self, chunk_buffer):
-        # print('chunk_buffer wrote')
         self.chunk_buffer = []
         tic = time.perf_counter()
         with h5py.File(self.patient_data_amp, 'a') as hdf_file:
@@ -113,7 +116,14 @@ class Dataset:
         toc = time.perf_counter()
         print('chunk_buffer wrote, time = ', toc-tic)
 
-    def save_chunk(self, chunk):
+    def save_chunk(self, chunk, pause=False, resume=False):
+        control = np.zeros((1, chunk.shape[-1]))
+        if pause:
+            control[0] = 1
+        elif resume:
+            control[0] = 2
+        chunk = np.concatenate([chunk, control], axis=0)
+
         self.chunk_buffer.append(chunk)
         if len(self.chunk_buffer) >= self.max_buffer_size:
             chunk_buffer = np.stack(self.chunk_buffer)
@@ -133,10 +143,8 @@ class Dataset:
         with h5py.File(self.patient_data_amp, 'r') as hdf_file:
             data = hdf_file['data'][()]
         data = np.transpose(data, (1, 0, 2)).reshape((self.data_shape[0], -1))
-        self.save_fif(data)
-        # with h5py.File(self.patient_data_fif, 'a') as hdf_file:
-        #     hdf_file.create_dataset('data', data=data)
-
+        if data.shape[-1] > 0:
+            self.save_fif(data)
         toc = time.perf_counter()
         print('time to rewrite ', toc-tic)
 
@@ -144,8 +152,7 @@ class Dataset:
     def save_fif(self, data):
         channel_take = np.concatenate([self.config.processor.channels, np.asarray([True] * 4)])
         data = data[channel_take]
-        # ch_names = np.asarray(self.config.processor.channel_names)[channel_take].tolist()
-        ch_names = self.config.processor.channel_names
+        ch_names = self.config.processor.channel_names + ['control']
         sfreq = self.config.processor.fs
 
         ch_types = ['ecog' for _ in range(self.config.processor.n_channels)] + ['stim' for _ in range(4)]
@@ -164,32 +171,36 @@ class Dataset:
 
 
 
-def _run_until_the_end(config, queue_input, queue_output):
-    dataset = None
-    stop_flag = 0
+def _recorder_run(config, queue_input, event_pause, event_finish):
+    dataset = Dataset(config)
+    pause_on = False
     time_cicle = time.perf_counter()
     while True:
+        if event_finish.is_set():
+            dataset.save_data()
+            break
+
         if not queue_input.empty():
             message = queue_input.get(block=False)
-            if message is None:
+
+            if event_pause.is_set() and pause_on:
                 continue
-            label, data = message
-            if label == 'start':
-                dataset = Dataset(config)
-                dataset.save_chunk(data)
-            elif label == 'data':
-                dataset.save_chunk(data)
-            elif label == 'finish':
-                dataset.save_chunk(data)
-                dataset.save_data()
-                stop_flag = 1
-        if stop_flag:
-            break
+            elif (not event_pause.is_set()) and pause_on:
+                dataset.save_chunk(message, resume=True)
+                pause_on = False
+            elif event_pause.is_set() and (not pause_on):
+                dataset.save_chunk(message, pause=True)
+                pause_on = True
+            elif (not event_pause.is_set()) and (not pause_on):
+                dataset.save_chunk(message)
+
         time_sleep = 0.01 + time_cicle - time.perf_counter()
         if time_sleep > 0:
             time.sleep(time_sleep)
-    queue_output.put(('save finished in', None))
-    print('buy')
+
+    event_pause.clear()
+    event_finish.clear()
+
 
 
 

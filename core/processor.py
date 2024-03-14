@@ -32,18 +32,74 @@ class Processor:
         self.hg_ecog_smoother = None
         self.sound_highpass = None
 
-        self.experiment_status = False
-
         self.update_filters(self.config)
         self.em.register_handler('update config.processor.channels', self.update_filters)
         self.em.register_handler('update config.visualizer parameters', self.update_filters)
 
 
-    # def set_receiver_queue_input(self, queue):
-    #     self.receiver_queue_input = queue
-    #
-    # def set_receiver_queue_output(self, queue):
-    #     self.receiver_queue_output = queue
+    def on_timer(self, update_data_timeseries, update_data_sound):
+
+        if self.receiver_queue_output is None:
+            print('receiver queue None')
+            return
+        if not self.receiver_queue_output.empty():
+            message = self.receiver_queue_output.get(block=False)
+            # print("receiver message{}".format(message))
+            if message is None:
+                return
+            label, data = message
+            if label == 'lost connection, data saved':
+                return
+            elif label == 'chunk':
+                data = data.T
+                chunk_timeseries = data[:self.config.receiver.n_channels_max,...][self.config.processor.channels]
+                chunk_sound = data[self.config.receiver.sound_channel_index]
+
+                self.em.trigger('processor.chunk_record', data)
+
+                chunk_timeseries_notched = self.notch_filter(chunk_timeseries)
+
+                if self.config.visualizer.ecog_notch:
+                    chunk_timeseries_plot = np.copy(chunk_timeseries_notched)
+                else:
+                    chunk_timeseries_plot = np.copy(chunk_timeseries)
+                if self.config.visualizer.ecog_highpass_filter:
+                    chunk_timeseries_plot = self.ecog_highpass(chunk_timeseries_plot)
+                if self.config.visualizer.ecog_lowpass_filter:
+                    chunk_timeseries_plot = self.ecog_lowpass(chunk_timeseries_plot)
+
+                spec = self.spectrum(chunk_timeseries.T).T
+
+                chunk_timeseries_hg = self.hg_ecog_bandpass(chunk_timeseries_notched)
+                chunk_timeseries_hg_plot = np.copy(chunk_timeseries_hg)
+                chunk_timeseries_hg_ = np.abs(chunk_timeseries_hg)
+                if self.config.visualizer.log_transform:
+                    chunk_timeseries_hg_ = np.log(chunk_timeseries_hg_ + 1e-10)
+                chunk_timeseries_hga = self.hg_ecog_smoother(chunk_timeseries_hg_)
+                chunk_timeseries_hga_plot = np.copy(chunk_timeseries_hga)
+
+                hg_spec = self.hg_spectrum(chunk_timeseries_hg.T).T
+
+                if self.config.visualizer.downsample:
+                    chunk_timeseries_plot = self.filter_downsample_antialiasing(chunk_timeseries_plot)
+                    chunk_timeseries_plot = self.filter_downsample(chunk_timeseries_plot)
+                    chunk_timeseries_hg_plot = self.filter_downsample(chunk_timeseries_hg_plot)
+                    chunk_timeseries_hga_plot = self.filter_downsample(chunk_timeseries_hga)
+
+                data_values = {
+                    'ECoG':chunk_timeseries_plot,
+                    'Spec':spec,
+                    'hgECoG':chunk_timeseries_hg_plot,
+                    'hgSpec':hg_spec,
+                    'hgA':chunk_timeseries_hga_plot,
+                }
+                update_data_timeseries(data_values)
+                # print("timeseries updated")
+
+                chunk_sound = self.sound_highpass(chunk_sound)
+                chunk_sound = self.filter_downsample(chunk_sound)
+                update_data_sound(chunk_sound)
+
 
     def update_filters(self, args=None):
         self.filter_downsample_antialiasing = ButterFilterRealtime(
@@ -114,88 +170,7 @@ class Processor:
         )
 
 
-    def on_timer(self, update_data_timeseries, update_data_sound):
-        if self.receiver_queue_output is None:
-            print('receiver queue None')
-            return
-        if not self.receiver_queue_output.empty():
-            message = self.receiver_queue_output.get(block=False)
-            # print("receiver message{}".format(message))
-            if message is None:
-                return
-            label, data = message
-            if label == 'lost connection, data saved':
-                return
-            elif label == 'chunk':
-                data = data.T
-                chunk_timeseries = data[:self.config.receiver.n_channels_max,...][self.config.processor.channels]
-                chunk_sound = data[self.config.receiver.sound_channel_index]
-                chunk_control = data[self.config.receiver.control_channel_index]
-                chunk_stimulus = data[self.config.receiver.stimulus_channel_index]
 
-                start_signal, finish_signal = (1 in chunk_control), (2 in chunk_control)
-                if start_signal:
-                    print('start_signal')
-                if finish_signal:
-                    print('finish_signal')
-
-
-                if start_signal and finish_signal:
-                    self.experiment_status = False
-                elif start_signal:
-                    self.experiment_status = True
-                    self.em.trigger('recorder.run')
-                    self.recorder_queue_input.put(('start', data))
-                elif finish_signal:
-                    self.experiment_status = False
-                    self.recorder_queue_input.put(('finish', data))
-                elif self.experiment_status:
-                    self.recorder_queue_input.put(('data', data))
-
-                chunk_timeseries_notched = self.notch_filter(chunk_timeseries)
-
-                if self.config.visualizer.ecog_notch:
-                    chunk_timeseries_plot = np.copy(chunk_timeseries_notched)
-                else:
-                    chunk_timeseries_plot = np.copy(chunk_timeseries)
-                if self.config.visualizer.ecog_highpass_filter:
-                    chunk_timeseries_plot = self.ecog_highpass(chunk_timeseries_plot)
-                if self.config.visualizer.ecog_lowpass_filter:
-                    chunk_timeseries_plot = self.ecog_lowpass(chunk_timeseries_plot)
-
-                spec = self.spectrum(chunk_timeseries.T).T
-
-                chunk_timeseries_hg = self.hg_ecog_bandpass(chunk_timeseries_notched)
-                chunk_timeseries_hg_plot = np.copy(chunk_timeseries_hg)
-                chunk_timeseries_hg_ = np.abs(chunk_timeseries_hg)
-                if self.config.visualizer.log_transform:
-                    chunk_timeseries_hg_ = np.log(chunk_timeseries_hg_ + 1e-10)
-                chunk_timeseries_hga = self.hg_ecog_smoother(chunk_timeseries_hg_)
-                chunk_timeseries_hga_plot = np.copy(chunk_timeseries_hga)
-
-                hg_spec = self.hg_spectrum(chunk_timeseries_hg.T).T
-
-                if self.config.visualizer.downsample:
-                    chunk_timeseries_plot = self.filter_downsample_antialiasing(chunk_timeseries_plot)
-                    chunk_timeseries_plot = self.filter_downsample(chunk_timeseries_plot)
-                    chunk_timeseries_hg_plot = self.filter_downsample(chunk_timeseries_hg_plot)
-                    chunk_timeseries_hga_plot = self.filter_downsample(chunk_timeseries_hga)
-
-                data_values = {
-                    'ECoG':chunk_timeseries_plot,
-                    'Spec':spec,
-                    'hgECoG':chunk_timeseries_hg_plot,
-                    'hgSpec':hg_spec,
-                    'hgA':chunk_timeseries_hga_plot,
-                }
-                update_data_timeseries(data_values)
-                # print("timeseries updated")
-
-                chunk_sound = self.sound_highpass(chunk_sound)
-                chunk_sound = self.filter_downsample(chunk_sound)
-                update_data_sound(chunk_sound)
-
-                control_sequence = data
 
 
 

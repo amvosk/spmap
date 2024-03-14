@@ -7,7 +7,7 @@ sys.path.insert(0, '../core/')
 sys.path.insert(0, '../config/')
 from event_manager import EventManager
 from config import read_config_file, parse_config
-from recorder import Recorder, _run_until_the_end
+from recorder import Recorder, _recorder_run
 
 if __name__ == '__main__':
     config_file_path = '../config/config_default.ini'
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     config = parse_config(em, config_ini)
 
     recdr = Recorder(config, em)
-    recdr.run(_run_until_the_end)
+    recdr.run(_recorder_run)
     time.sleep(1)
     chunk = np.random.normal(size=(68,256))
     recdr.queue_put(('start', None))

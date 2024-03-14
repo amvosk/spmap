@@ -39,13 +39,49 @@ class Experiment:
             self.em.trigger('update config.patient_info.patient_history_id', data.historyID)
             self.em.trigger('update config.patient_info.patient_hospitalization_date', data.hospitalizationDate)
         elif data.__class__.__name__ == 'ControlData':
-            self.em.trigger('experiment.transition', data.signal.lower())
+            if data.signal.lower() == 'start':
+                self.em.trigger('experiment.start')
+            elif data.signal.lower() == 'finish':
+                self.em.trigger('experiment.finish')
+            elif data.signal.lower() == 'pause':
+                self.em.trigger('experiment.pause')
+            elif data.signal.lower() == 'resume':
+                self.em.trigger('experiment.resume')
+            # self.em.trigger('update config.control.receiver_run', True)
+            # self.em.trigger('experiment.transition', data.signal.lower())
         elif data.__class__.__name__ == 'ImageData':
             self.em.trigger('experiment.stimulus_image', data.image_name)
         elif data.__class__.__name__ == 'BlankData':
-            self.em.trigger('experiment.blank', data.signal.lower())
+            self.em.trigger('experiment.blank')
         else:
             print('experiment failed me')
+
+    # if self.experiment_start:
+    #     self.em.trigger('recorder.start')
+    # elif self.experiment_finish:
+    #     self.em.trigger('recorder.finish')
+    # elif self.experiment_pause:
+    #     self.em.trigger('recorder.pause')
+    # elif self.experiment_resume:
+    #     self.em.trigger('recorder.unpause')
+
+
+    # def parse_control(self, data):
+    #     if data == 'start':
+    #         self.experiment_start = True
+    #         self.experiment_finish = False
+    #     elif data == 'finish':
+    #         self.experiment_start = False
+    #         self.experiment_finish = True
+    #     elif data == 'pause':
+    #         self.experiment_pause = True
+    #         self.experiment_resume = False
+    #     elif data == 'resume':
+    #         self.experiment_pause = False
+    #         self.experiment_resume = True
+
+
+
 
 
     def start(self):
@@ -72,5 +108,20 @@ class Experiment:
             self.process.terminate()
         self.process = None
         self.queue_input = multiprocessing.Queue()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

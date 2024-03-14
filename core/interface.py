@@ -12,7 +12,7 @@ from gui.canvas_timeseries import TimeSeriesCanvas
 from gui.canvas_sound import SoundCanvas
 from gui.canvas_pictures import PicturesCanvas
 from gui.canvas_results_summary import ResultsSummaryCanvasWrapper
-from config import LocalConfig
+# from config import LocalConfig
 
 sys.path.insert(0, '../generation/')
 from generator import GeneratorLSL
@@ -35,7 +35,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.config = config
         self.em = em
-        self.config_local = LocalConfig(self.config, self.em)
+        # self.config_local = LocalConfig(self.config, self.em)
 
         # self.amplifiers = [self.config.receiver.lsl_stream_name_debug]
         self.receiver = Receiver(self.config, self.em)
@@ -1298,7 +1298,8 @@ class ReceiverWindow(QtWidgets.QDialog):
                     widget.setDisabled(True)
             #self.receiver = Receiver(self.config, self.em)
             print("connect")
-            self.receiver.connect()
+            # self.receiver.connect()
+            self.em.trigger('receiver.connect')
 
             # self.processor.set_receiver_queue_input(self.receiver.queue_input)
             # self.processor.set_receiver_queue_output(self.receiver.queue_output)

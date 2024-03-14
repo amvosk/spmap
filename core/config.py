@@ -16,21 +16,30 @@ import json
 
 import numpy as np
 
-class LocalConfig:
-    split = 0
-    splits_values = [np.asarray([])]
+# class LocalConfig:
+#     split = 0
+#     splits_values = [np.asarray([])]
+#
+#     def __init__(self, config, em):
+#         self.config = config
+#         self.em = em
+#         self.em.register_handler('update local.split', self._update_local_split)
+#         self.em.register_handler('update local.splits_values', self._update_local_splits_values)
+#
+#     def _update_local_split(self, split):
+#         self.split = int(split)
+#
+#     def _update_local_splits_values(self, stimulus):
+#         self.splits_values = stimulus.get_splits()
 
-    def __init__(self, config, em):
-        self.config = config
-        self.em = em
-        self.em.register_handler('update local.split', self._update_local_split)
-        self.em.register_handler('update local.splits_values', self._update_local_splits_values)
+@dataclass
+class ControlConfig:
+    receiver_run: bool
+    experiment_run: bool
+    recorder_run: bool
 
-    def _update_local_split(self, split):
-        self.split = int(split)
-
-    def _update_local_splits_values(self, stimulus):
-        self.splits_values = stimulus.get_splits()
+    def __post_init__(self):
+        self._type = 'control'
 
 
 @dataclass
@@ -88,7 +97,7 @@ class ReceiverConfig:
     n_channels_max: int
     sound_channel_index: int
     timestamp_channel_index: int
-    control_channel_index: int
+    # control_channel_index: int
     stimulus_channel_index: int
     control_indices: dict
 
@@ -166,7 +175,7 @@ class ProcessorConfig:
     def _update_channels(self, channels):
         self.channels = np.copy(channels)
         self.n_channels = np.sum(self.channels).item()
-        self.channel_names = ['channel_{}'.format(i + 1) for i in range(self.n_channels)] + ['sound', 'timestamp', 'control', 'stimulus']
+        self.channel_names = ['channel_{}'.format(i + 1) for i in range(self.n_channels)] + ['sound', 'timestamp', 'stimulus']
         self.channels_bad = np.zeros(self.n_channels, dtype=bool)
         # print()
         # print(self.channels)
@@ -223,6 +232,7 @@ class Config:
     patient_info: PatientInfoConfig
     general: GeneralConfig
     paths: PathConfig
+    control: ControlConfig
     experiment: ExperimentConfig
     processor: ProcessorConfig
     receiver: ReceiverConfig
@@ -238,6 +248,7 @@ class Config:
 
 data_classes = [
     PatientInfoConfig, GeneralConfig, PathConfig,
+    ControlConfig,
     ExperimentConfig, ReceiverConfig, ProcessorConfig,
     # RecorderConfig,
     DecoderConfig, VisualizerConfig
@@ -314,6 +325,17 @@ def parse_config(em, config):
     )
     path_config.set_events_handlers(em)
 
+    receiver_run = False
+    experiment_run = False
+    recorder_run = False
+    control_config = ControlConfig(
+        receiver_run=receiver_run,
+        experiment_run=experiment_run,
+        recorder_run=recorder_run,
+    )
+    control_config.set_events_handlers(em)
+
+
     stimulus_type = config['experiment']['stimulus_type']
     n_stimulus = config['experiment'].getfloat('n_stimulus')
     stimulus_time = config['experiment'].getfloat('stimulus_time')
@@ -336,7 +358,7 @@ def parse_config(em, config):
     cache_width = config['receiver'].getint('cache_width')
     sound_channel_index = config['receiver'].getint('sound_channel_index')
     timestamp_channel_index = config['receiver'].getint('timestamp_channel_index')
-    control_channel_index = config['receiver'].getint('control_channel_index')
+    # control_channel_index = config['receiver'].getint('control_channel_index')
     stimulus_channel_index = config['receiver'].getint('stimulus_channel_index')
 
     with open(app_path / 'config/stimulus/control_indices.json', 'r') as file:
@@ -353,7 +375,7 @@ def parse_config(em, config):
         n_channels_max=n_channels_max,
         sound_channel_index=sound_channel_index,
         timestamp_channel_index=timestamp_channel_index,
-        control_channel_index=control_channel_index,
+        # control_channel_index=control_channel_index,
         stimulus_channel_index=stimulus_channel_index,
         control_indices=control_indices,
     )
@@ -374,14 +396,14 @@ def parse_config(em, config):
     channel_index += [
         sound_channel_index,
         timestamp_channel_index,
-        control_channel_index,
+        # control_channel_index,
         stimulus_channel_index
     ]
     channel_index = np.asarray(channel_index, dtype=int)
     channels_bad = np.zeros(n_channels, dtype=bool)
     # print(channels_bad)
     channel_names = ['channel_{}'.format(i + 1) for i in range(n_channels)]
-    channel_names += ['sound', 'timestamp', 'control', 'stimulus']
+    channel_names += ['sound', 'timestamp', 'stimulus']
     dataset_width = len(channel_names)
 
     # print(n_channels)
@@ -489,6 +511,7 @@ def parse_config(em, config):
         patient_info=patient_info_config,
         general=general_config,
         paths=path_config,
+        control=control_config,
         experiment=experiment_config,
         processor=processor_config,
         receiver=receiver_config,
@@ -546,7 +569,7 @@ def write_config_file(path, conf):
     config['receiver']['n_channels_max'] = str(conf.receiver.n_channels_max)
     config['receiver']['sound_channel_index'] = str(conf.receiver.sound_channel_index)
     config['receiver']['timestamp_channel_index'] = str(conf.receiver.timestamp_channel_index)
-    config['receiver']['control_channel_index'] = str(conf.receiver.control_channel_index)
+    # config['receiver']['control_channel_index'] = str(conf.receiver.control_channel_index)
     config['receiver']['stimulus_channel_index'] = str(conf.receiver.stimulus_channel_index)
 
     # config['recorder'] = {}
