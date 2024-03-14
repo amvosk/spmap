@@ -53,7 +53,7 @@ class Recorder:
                     target=_recorder_run,
                     args=(copy.deepcopy(self.config), self.queue_input, self.event_pause, self.event_finish)
                 )
-                self.process.daemon = True
+                # self.process.daemon = True
                 self.process.start()
                 self.em.trigger('update config.control.recorder_run', True)
             except Exception:
@@ -66,10 +66,11 @@ class Recorder:
 
 
     def clear(self):
-        if self.process.is_alive():
-            self.process.join()
-        if self.process.is_alive():
-            self.process.terminate()
+        if self.process is not None:
+            if self.process.is_alive():
+                self.process.join()
+            if self.process.is_alive():
+                self.process.terminate()
         self.process = None
         while not self.queue_input.empty():
             self.queue_input.get()

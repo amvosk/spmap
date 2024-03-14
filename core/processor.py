@@ -100,6 +100,46 @@ class Processor:
                 chunk_sound = self.filter_downsample(chunk_sound)
                 update_data_sound(chunk_sound)
 
+                # import psutil
+                #
+                # # Get the current process ID
+                # parent_pid = psutil.Process().pid
+                #
+                # # Get information about all running processes
+                # all_processes = psutil.process_iter()
+                #
+                # # Iterate over all processes and check if they are children of the parent process
+                # children_processes = []
+                # for process in all_processes:
+                #     try:
+                #         # Get the parent process ID of the current process
+                #         parent_process_id = process.ppid()
+                #         # Check if the parent process ID matches the parent process ID we are interested in
+                #         if parent_process_id == parent_pid:
+                #             children_processes.append(process)
+                #     except psutil.NoSuchProcess:
+                #         # Ignore processes that no longer exist
+                #         pass
+                #
+                # # Print information about the children processes
+                # print()
+                # for child_process in children_processes:
+                #     print("Child PID:", child_process.pid, "Name:", child_process.name())
+                # print()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def update_filters(self, args=None):
         self.filter_downsample_antialiasing = ButterFilterRealtime(

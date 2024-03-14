@@ -47,39 +47,12 @@ class Experiment:
                 self.em.trigger('experiment.pause')
             elif data.signal.lower() == 'resume':
                 self.em.trigger('experiment.resume')
-            # self.em.trigger('update config.control.receiver_run', True)
-            # self.em.trigger('experiment.transition', data.signal.lower())
         elif data.__class__.__name__ == 'ImageData':
             self.em.trigger('experiment.stimulus_image', data.image_name)
         elif data.__class__.__name__ == 'BlankData':
             self.em.trigger('experiment.blank')
         else:
             print('experiment failed me')
-
-    # if self.experiment_start:
-    #     self.em.trigger('recorder.start')
-    # elif self.experiment_finish:
-    #     self.em.trigger('recorder.finish')
-    # elif self.experiment_pause:
-    #     self.em.trigger('recorder.pause')
-    # elif self.experiment_resume:
-    #     self.em.trigger('recorder.unpause')
-
-
-    # def parse_control(self, data):
-    #     if data == 'start':
-    #         self.experiment_start = True
-    #         self.experiment_finish = False
-    #     elif data == 'finish':
-    #         self.experiment_start = False
-    #         self.experiment_finish = True
-    #     elif data == 'pause':
-    #         self.experiment_pause = True
-    #         self.experiment_resume = False
-    #     elif data == 'resume':
-    #         self.experiment_pause = False
-    #         self.experiment_resume = True
-
 
 
 
@@ -91,7 +64,7 @@ class Experiment:
                 target=run_server,
                 args=(self.queue_input,)
             )
-            self.process.daemon = True
+            # self.process.daemon = True
             self.process.start()
         except Exception as exception:
             print(exception)
@@ -104,8 +77,9 @@ class Experiment:
     def clear(self):
         # if self.receiver_process.is_alive():
         #     self.receiver_process.join()
-        if self.process.is_alive():
-            self.process.terminate()
+        if self.process is not None:
+            if self.process.is_alive():
+                self.process.terminate()
         self.process = None
         self.queue_input = multiprocessing.Queue()
 

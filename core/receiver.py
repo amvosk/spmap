@@ -143,7 +143,7 @@ class Receiver:
         # initialize basic configuration
         self.config = config
         self.em = em
-        self.receiver_process = None
+        self.process = None
         self.stop_event = multiprocessing.Event()
         self.queue_input = multiprocessing.Queue()
         self.queue_output = multiprocessing.Queue()
@@ -165,35 +165,35 @@ class Receiver:
 
     def connect(self, args=None):
         try:
-            self.receiver_process = multiprocessing.Process(
+            self.process = multiprocessing.Process(
                 target=_connect,
                 args=(copy.deepcopy(self.config.receiver), self.queue_input, self.queue_output, self.stop_event)
             )
-            #self.receiver_process.daemon = True
-            self.receiver_process.start()
+            #self.process.daemon = True
+            self.process.start()
             self.em.trigger('update config.control.receiver_run', True)
         except ConnectionError:
             print('connection error')
-            if self.receiver_process.is_alive():
-                self.receiver_process.join()
-            if self.receiver_process.is_alive():
-                self.receiver_process.terminate()
+            if self.process.is_alive():
+                self.process.join()
+            if self.process.is_alive():
+                self.process.terminate()
             self.em.trigger('update config.control.receiver_run', False)
 
     def terminate(self):
-        if self.receiver_process is not None:
-            if self.receiver_process.is_alive():
-                self.receiver_process.terminate()
+        if self.process is not None:
+            if self.process.is_alive():
+                self.process.terminate()
         self.em.trigger('update config.control.receiver_run', False)
 
     def clear(self):
         self.stop_event.set()
-        # if self.receiver_process.is_alive():
-        #     self.receiver_process.join()
+        # if self.process.is_alive():
+        #     self.process.join()
         time.sleep(0.005)
-        if self.receiver_process.is_alive():
-            self.receiver_process.terminate()
-        self.receiver_process = None
+        if self.process.is_alive():
+            self.process.terminate()
+        self.process = None
         self.stop_event = multiprocessing.Event()
         while not self.queue_input.empty():
             self.queue_input.get()

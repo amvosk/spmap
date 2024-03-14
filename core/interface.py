@@ -1255,7 +1255,7 @@ class ReceiverWindow(QtWidgets.QDialog):
         button_connect.setObjectName("connect_button")
         button_connect.setCheckable(True)
 
-        if not self.receiver.receiver_process:
+        if not self.receiver.process:
             button_connect.setStyleSheet("") 
             button_connect.setChecked(False)
         else:
@@ -1319,8 +1319,8 @@ class ReceiverWindow(QtWidgets.QDialog):
             #self.timer_connect = None
             #self.receiver.disconnect()
             print("terminate")
-            # self.receiver.receiver_process.terminate()
-            # self.receiver.receiver_process = None
+            # self.receiver.process.terminate()
+            # self.receiver.process = None
             self.receiver.clear()
             # self.processor.set_receiver_queue_input(None)
             # self.processor.set_receiver_queue_output(None)
