@@ -16,6 +16,7 @@ from gui.canvas_results_summary import ResultsSummaryCanvasWrapper
 
 sys.path.insert(0, '../generation/')
 from generator import GeneratorLSL
+from record_lsl import RecordLSL
 from receiver import Receiver
 from recorder import Recorder
 from processor import Processor
@@ -44,6 +45,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.experiment = Experiment(self.config, self.em, self)
         self.stimulus = Stimulus(self.config, self.em)
         self.generator_lsl = GeneratorLSL(self.config, self.em)
+        self.record_lsl = RecordLSL(self.config, self.em)
 
         self.timer_connect = QtCore.QTimer(self) 
         self.timer_experiment = None
@@ -117,7 +119,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logo_label.setPixmap(logo_icon)
 
         # Создаем QLabel для текста "Server"
-        title_label = QtWidgets.QLabel("SpMap")
+        title_label = QtWidgets.QLabel("ELoQ")
         title_font = QtGui.QFont("Runic", 16)  # Настраиваем шрифт
         title_font.setBold(False)
 
@@ -165,6 +167,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.receiver.terminate()
         if self.generator_lsl is not None:
             self.generator_lsl.stop()
+        if self.record_lsl is not None:
+            self.record_lsl.stop()
         # Accept the close event to close the window
         event.accept()
 
@@ -198,64 +202,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.em.trigger('update config.processor.channels_bad', (index, state))
 
     def create_menu_bar(self):
-        menu_bar = self.menuBar()
-        style_sheet = """
-            QMenuBar {
-                background-color: #D9D9D9;
-                border: 1px solid #D9D9D9;
-                height: 54px;
-            }
-        """
-        toolbar = QToolBar("My main toolbar")
-        toolbar.setIconSize(QtCore.QSize(56, 56))
-        self.addToolBar(toolbar)
-
-        button_action = QAction(QIcon(str(self.config.paths.resource_path) + "/icons/brain.svg"), "&Your button", self)
-        button_action.setStatusTip("This is your button")
-        #button_action.triggered.connect(self.onMyToolBarButtonClick)
-        button_action.setCheckable(True)
-        toolbar.addAction(button_action)
-        toolbar.addSeparator()
-
-        menu_bar.setStyleSheet(style_sheet)
-        # Create the "File" menu
-        file_menu = menu_bar.addMenu("File")
-
-        # Создаем меню Help
-        help_menu = menu_bar.addMenu("Help")
-
-        # Создаем действие (Action) для меню Help
-        help_action = QAction("Help", self)
-
-        # Применяем стили к тексту в действии
-        style_sheet_action = """
-            QAction {
-                color: #000;
-                font-family: Saira;
-                font-size: 16px;
-                font-style: normal;
-                font-weight: 600;
-                line-height: normal;
-            }
-        """
-        help_menu.setStyleSheet(style_sheet_action)
-
-        # Добавляем действие в меню
-        help_menu.addAction(help_action)
-
-        file_menu.addAction("Open")
-        file_menu.addAction("Save")
-        file_menu.addSeparator()
-        file_menu.addAction("Exit", self.close)
-        help_menu.addAction("About")
-
-        config_menu = menu_bar.addMenu("Configuration")
-        config_menu.addAction("Patient")
-        config_menu.addAction("Experiment")
-        config_menu.addAction("Receiver", self.receiver_dialog)
-        config_menu.addAction("Vizualization")
-
-    def create_menu_bar(self):
 
         menu_bar = self.menuBar()
 
@@ -266,12 +212,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 height: 54px;
             }
         """
-        
+
         icon_path = "../resource/icons/brain.svg"
         icon_label = QtWidgets.QLabel()
         icon_label.setPixmap(QtGui.QPixmap(icon_path))
 
-        menu_bar.setStyleSheet(style_sheet)
         # Create the "File" menu
         file_menu = menu_bar.addMenu("File")
 
@@ -306,6 +251,118 @@ class MainWindow(QtWidgets.QMainWindow):
         config_menu = menu_bar.addMenu("Configuration")
         config_menu.addAction("Dark Theme", lambda: self.change_theme('dark'))
         config_menu.addAction("Light Theme", lambda: self.change_theme('light'))
+
+
+
+    # def create_menu_bar(self):
+    #     menu_bar = self.menuBar()
+    #     style_sheet = """
+    #         QMenuBar {
+    #             background-color: #D9D9D9;
+    #             border: 1px solid #D9D9D9;
+    #             height: 54px;
+    #         }
+    #     """
+    #     toolbar = QToolBar("My main toolbar")
+    #     toolbar.setIconSize(QtCore.QSize(56, 56))
+    #     self.addToolBar(toolbar)
+    #
+    #     button_action = QAction(QIcon(str(self.config.paths.resource_path) + "/icons/brain.svg"), "&Your button", self)
+    #     button_action.setStatusTip("This is your button")
+    #     #button_action.triggered.connect(self.onMyToolBarButtonClick)
+    #     button_action.setCheckable(True)
+    #     toolbar.addAction(button_action)
+    #     toolbar.addSeparator()
+    #
+    #     menu_bar.setStyleSheet(style_sheet)
+    #     # Create the "File" menu
+    #     file_menu = menu_bar.addMenu("File")
+    #
+    #     # Создаем меню Help
+    #     help_menu = menu_bar.addMenu("Help")
+    #
+    #     # Создаем действие (Action) для меню Help
+    #     help_action = QAction("Help", self)
+    #
+    #     # Применяем стили к тексту в действии
+    #     style_sheet_action = """
+    #         QAction {
+    #             color: #000;
+    #             font-family: Saira;
+    #             font-size: 16px;
+    #             font-style: normal;
+    #             font-weight: 600;
+    #             line-height: normal;
+    #         }
+    #     """
+    #     help_menu.setStyleSheet(style_sheet_action)
+    #
+    #     # Добавляем действие в меню
+    #     help_menu.addAction(help_action)
+    #
+    #     file_menu.addAction("Open")
+    #     file_menu.addAction("Save")
+    #     file_menu.addSeparator()
+    #     file_menu.addAction("Exit", self.close)
+    #     help_menu.addAction("About")
+    #
+    #     config_menu = menu_bar.addMenu("Configuration")
+    #     config_menu.addAction("Patient")
+    #     config_menu.addAction("Experiment")
+    #     config_menu.addAction("Receiver", self.receiver_dialog)
+    #     config_menu.addAction("Vizualization")
+    #
+    # def create_menu_bar(self):
+    #
+    #     menu_bar = self.menuBar()
+    #
+    #     style_sheet = """
+    #         QMenuBar {
+    #             background-color: #D9D9D9;
+    #             border: 1px solid #D9D9D9;
+    #             height: 54px;
+    #         }
+    #     """
+    #
+    #     icon_path = "../resource/icons/brain.svg"
+    #     icon_label = QtWidgets.QLabel()
+    #     icon_label.setPixmap(QtGui.QPixmap(icon_path))
+    #
+    #     menu_bar.setStyleSheet(style_sheet)
+    #     # Create the "File" menu
+    #     file_menu = menu_bar.addMenu("File")
+    #
+    #     # Создаем меню Help
+    #     help_menu = menu_bar.addMenu("Help")
+    #
+    #     # Создаем действие (Action) для меню Help
+    #     help_action = QAction("Help", self)
+    #
+    #     # Применяем стили к тексту в действии
+    #     style_sheet_action = """
+    #         QAction {
+    #             color: #000;
+    #             font-family: Saira;
+    #             font-size: 16px;
+    #             font-style: normal;
+    #             font-weight: 600;
+    #             line-height: normal;
+    #         }
+    #     """
+    #     help_menu.setStyleSheet(style_sheet_action)
+    #
+    #     # Добавляем действие в меню
+    #     help_menu.addAction(help_action)
+    #
+    #     file_menu.addAction("Open")
+    #     file_menu.addAction("Save")
+    #     file_menu.addSeparator()
+    #     file_menu.addAction("Exit", self.close)
+    #     help_menu.addAction("About")
+    #
+    #     config_menu = menu_bar.addMenu("Configuration")
+    #     config_menu.addAction("Dark Theme", lambda: self.change_theme('dark'))
+    #     config_menu.addAction("Light Theme", lambda: self.change_theme('light'))
 
     def change_theme(self, theme):
         if theme == 'dark':
@@ -428,12 +485,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def receiver_dialog(self):
-        receiver_window = ReceiverWindow(self.config, self.em, self.receiver, self.generator_lsl, self.processor, self.timeseries, self.sound, self.timer_connect,self.control_widget)
+        receiver_window = ReceiverWindow(
+            self.config, self.em, self.receiver, self.generator_lsl, self.record_lsl,
+            self.processor, self.timeseries, self.sound, self.timer_connect,self.control_widget)
         #receiver_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
         receiver_window.exec()
 
     def vizualizer_dialog(self):
-        vizualizer_window =  VizualizerWindow(self.config, self.em)
+        vizualizer_window = VizualizerWindow(self.config, self.em)
         vizualizer_window.exec()
 
 
@@ -1189,7 +1248,7 @@ class PatientWindow(QtWidgets.QDialog):
 
 
 class ReceiverWindow(QtWidgets.QDialog):
-    def __init__(self, config, em, receiver, generator_lsl, processor, timeseries, sound, timer_connect, control_widget):
+    def __init__(self, config, em, receiver, generator_lsl, record_lsl, processor, timeseries, sound, timer_connect, control_widget):
         super().__init__()
         self.setWindowTitle("LSL Settings")
         self.config = config
@@ -1199,6 +1258,7 @@ class ReceiverWindow(QtWidgets.QDialog):
         self.timeseries = timeseries
         self.sound = sound
         self.generator_lsl = generator_lsl
+        self.record_lsl = record_lsl
         self.timer_connect = timer_connect  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         self.control_widget = control_widget
@@ -1209,19 +1269,31 @@ class ReceiverWindow(QtWidgets.QDialog):
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         layout_receiver.addWidget(separator)
 
-        button_generator_lsl = QtWidgets.QPushButton("GeneratorLSL")
-        button_generator_lsl.setCheckable(True)
-        button_generator_lsl.setChecked(False)
-        button_generator_lsl.toggled.connect(partial(self.handle_button_generator_lsl, button_generator_lsl))
-        layout_receiver.addWidget(button_generator_lsl)
+        self.button_generator_lsl = QtWidgets.QPushButton("GeneratorLSL")
+        self.button_generator_lsl.setObjectName('button_generator_lsl')
+        self.button_generator_lsl.setCheckable(True)
+        self.button_generator_lsl.setChecked(False)
+        self.button_generator_lsl.toggled.connect(partial(self.handle_button_generator_lsl, self.button_generator_lsl))
+        layout_receiver.addWidget(self.button_generator_lsl)
+        self.button_generator_lsl_locked = False
+
+        self.button_record_lsl = QtWidgets.QPushButton("RecordLSL")
+        self.button_record_lsl.setObjectName('button_record_lsl')
+        self.button_record_lsl.setCheckable(True)
+        self.button_record_lsl.setChecked(False)
+        self.button_record_lsl.toggled.connect(partial(self.handle_button_record_lsl, self.button_record_lsl))
+        layout_receiver.addWidget(self.button_record_lsl)
+        self.button_record_lsl_locked = False
 
         form_layout = QtWidgets.QFormLayout()
         form_widget = QtWidgets.QWidget()
         form_widget.setLayout(form_layout)
         layout_receiver.addWidget(form_widget)
 
-        self.amplifiers = [self.config.receiver.lsl_stream_name_debug]
-        self.amplifiers = [self.config.receiver.amplifier] + self.amplifiers
+        self.amplifiers = []
+        self.amplifiers.append(self.config.receiver.amplifier)
+        self.amplifiers.append(self.config.receiver.lsl_stream_name_generator)
+        self.amplifiers.append(self.config.receiver.lsl_stream_name_record)
 
         selection_amplifier = QtWidgets.QComboBox()
         for amplifier in self.amplifiers:
@@ -1260,15 +1332,23 @@ class ReceiverWindow(QtWidgets.QDialog):
             button_connect.setChecked(False)
         else:
             button_connect.setChecked(True)
-            button_generator_lsl.setDisabled(True)
+            self.button_generator_lsl.setDisabled(True)
+            self.button_record_lsl.setDisabled(True)
             button_connect.setStyleSheet("background-color: blue; color: white;")
 
         if not self.generator_lsl.process:
-            button_generator_lsl.setStyleSheet("") 
-            button_generator_lsl.setChecked(False)
+            self.button_generator_lsl.setStyleSheet("")
+            self.button_generator_lsl.setChecked(False)
         else:
-            button_generator_lsl.setChecked(True)
-            button_generator_lsl.setStyleSheet("background-color: blue; color: white;")
+            self.button_generator_lsl.setChecked(True)
+            self.button_generator_lsl.setStyleSheet("background-color: blue; color: white;")
+
+        if not self.record_lsl.process:
+            self.button_record_lsl.setStyleSheet("")
+            self.button_record_lsl.setChecked(False)
+        else:
+            self.button_record_lsl.setChecked(True)
+            self.button_record_lsl.setStyleSheet("background-color: blue; color: white;")
 
         button_connect.toggled.connect(partial(self.handle_button_connect, button_connect, layout_receiver))
         layout_receiver.addWidget(button_connect)
@@ -1279,31 +1359,41 @@ class ReceiverWindow(QtWidgets.QDialog):
     def handle_button_generator_lsl(self, button, checked):
         if checked:
             button.setStyleSheet("background-color: blue; color: white;")
-            #self.generator_lsl = GeneratorLSL(self.config, self.em)
             self.generator_lsl.start()
+            self.button_record_lsl.setDisabled(True)
+            self.button_record_lsl_locked = True
         else:
             button.setStyleSheet("")
-            #self.generator_lsl.stop()
             self.generator_lsl.clear()
-            # self.generator_lsl.process.terminate()
-            # self.generator_lsl.process = None
+            self.button_record_lsl.setEnabled(True)
+            self.button_record_lsl_locked = False
 
-    def handle_button_connect(self, button, layout_receiver, checked):
+
+    def handle_button_record_lsl(self, button, checked):
+        if checked:
+            button.setStyleSheet("background-color: blue; color: white;")
+            self.record_lsl.start()
+            self.button_generator_lsl.setDisabled(True)
+            self.button_generator_lsl_locked = True
+        else:
+            button.setStyleSheet("")
+            self.record_lsl.clear()
+            self.button_generator_lsl.setEnabled(True)
+            self.button_generator_lsl_locked = False
+
+
+
+    def handle_button_connect(self, button, layout, checked):
         if checked:
             self.control_widget.get_start_icon().setIcon(QIcon("../resource/icons/pause.svg"))
             button.setStyleSheet("background-color: blue; color: white;")
-            for i in range(layout_receiver.count()):
-                widget = layout_receiver.itemAt(i).widget()
+            for i in range(layout.count()):
+                widget = layout.itemAt(i).widget()
                 if widget.objectName() not in ["connect_button", 'receiver_label']:
                     widget.setDisabled(True)
-            #self.receiver = Receiver(self.config, self.em)
             print("connect")
-            # self.receiver.connect()
             self.em.trigger('receiver.connect')
 
-            # self.processor.set_receiver_queue_input(self.receiver.queue_input)
-            # self.processor.set_receiver_queue_output(self.receiver.queue_output)
-            #self.timer_connect = QtCore.QTimer(self)
             self.timer_connect.timeout.connect(
                 partial(self.processor.on_timer, self.timeseries.update_data, self.sound.update_data)
             )
@@ -1311,19 +1401,19 @@ class ReceiverWindow(QtWidgets.QDialog):
         else:
             self.control_widget.get_start_icon().setIcon(QIcon("../resource/icons/start.svg"))
             button.setStyleSheet("")
-            for i in range(layout_receiver.count()):
-                widget = layout_receiver.itemAt(i).widget()
+            for i in range(layout.count()):
+                widget = layout.itemAt(i).widget()
                 if widget.objectName() not in ["connect_button", 'receiver_label']:
-                    widget.setDisabled(False)
+                    widget.setEnabled(True)
+                if widget.objectName() == 'button_record_lsl' and self.button_record_lsl_locked:
+                    widget.setDisabled(True)
+                elif widget.objectName() == 'button_generator_lsl' and self.button_generator_lsl_locked:
+                    widget.setDisabled(True)
+
             self.timer_connect.stop()
-            #self.timer_connect = None
-            #self.receiver.disconnect()
             print("terminate")
-            # self.receiver.process.terminate()
-            # self.receiver.process = None
             self.receiver.clear()
-            # self.processor.set_receiver_queue_input(None)
-            # self.processor.set_receiver_queue_output(None)
+
     
     def handle_currentTextChanged_amplifier(self, field_ip_address, amplifier):
         if amplifier.currentText() == "EBNeuro_BePLusLTM":

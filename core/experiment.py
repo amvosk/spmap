@@ -24,7 +24,7 @@ class Experiment:
         # self.connection_status = False
 
         self.timer = QtCore.QTimer(qt)
-        self.timer.timeout.connect(lambda : self.parse_message(self.queue_input))
+        self.timer.timeout.connect(lambda: self.parse_message(self.queue_input))
         self.timer.start(1)
 
     def parse_message(self, queue):
@@ -53,8 +53,6 @@ class Experiment:
             self.em.trigger('experiment.blank')
         else:
             print('experiment failed me')
-
-
 
 
     def start(self):

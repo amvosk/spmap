@@ -5,7 +5,7 @@ import sys, time
 # sys.path.insert(0, '../generation/')
 # from generator import GeneratorLSL
 
-from config import read_config_file, parse_config#, LocalConfig
+from config import read_config_file, parse_config
 from event_manager import EventManager
 
 from interface import MainWindow

@@ -70,7 +70,7 @@ def generate_sequence(config, stop_event):
 
 def _create_lsl(config):
     stream_info = pylsl.StreamInfo(
-        config.receiver.lsl_stream_name_debug, 'EEG', 69, config.receiver.fs, pylsl.cf_double64, 'myuid88888'
+        config.receiver.lsl_stream_name_generator, 'EEG', 69, config.receiver.fs, pylsl.cf_double64, 'myuid88888'
     )
     outlet = pylsl.StreamOutlet(stream_info)
     return outlet

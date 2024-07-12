@@ -90,7 +90,8 @@ class ReceiverConfig:
     amplifier: str
     amplifier_ip: str
     lsl_stream_name: str
-    lsl_stream_name_debug: str
+    lsl_stream_name_generator: str
+    lsl_stream_name_record: str
     fs: int
     cache_size: int
     cache_width: int
@@ -335,7 +336,6 @@ def parse_config(em, config):
     )
     control_config.set_events_handlers(em)
 
-
     stimulus_type = config['experiment']['stimulus_type']
     n_stimulus = config['experiment'].getfloat('n_stimulus')
     stimulus_time = config['experiment'].getfloat('stimulus_time')
@@ -351,7 +351,8 @@ def parse_config(em, config):
     amplifier = config['receiver']['amplifier']
     amplifier_ip = config['receiver']['amplifier_ip']
     lsl_stream_name = amplifier + '_' + amplifier_ip
-    lsl_stream_name_debug = config['receiver']['lsl_stream_name_debug']
+    lsl_stream_name_generator = config['receiver']['lsl_stream_name_generator']
+    lsl_stream_name_record = config['receiver']['lsl_stream_name_record']
     fs = config['receiver'].getint('fs')
     n_channels_max = config['receiver'].getint('n_channels_max')
     cache_size = config['receiver'].getint('cache_size')
@@ -368,7 +369,8 @@ def parse_config(em, config):
         amplifier=amplifier,
         amplifier_ip=amplifier_ip,
         lsl_stream_name=lsl_stream_name,
-        lsl_stream_name_debug=lsl_stream_name_debug,
+        lsl_stream_name_generator=lsl_stream_name_generator,
+        lsl_stream_name_record=lsl_stream_name_record,
         fs=fs,
         cache_size=cache_size,
         cache_width=cache_width,

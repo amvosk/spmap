@@ -52,11 +52,11 @@ class Processor:
                 return
             elif label == 'chunk':
                 data = data.T
-                chunk_timeseries = data[:self.config.receiver.n_channels_max,...][self.config.processor.channels]
-                chunk_sound = data[self.config.receiver.sound_channel_index]
 
                 self.em.trigger('processor.chunk_record', data)
 
+                chunk_timeseries = data[:self.config.receiver.n_channels_max,...][self.config.processor.channels]
+                chunk_sound = data[self.config.receiver.sound_channel_index]
                 chunk_timeseries_notched = self.notch_filter(chunk_timeseries)
 
                 if self.config.visualizer.ecog_notch:

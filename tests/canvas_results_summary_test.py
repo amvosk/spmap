@@ -50,14 +50,21 @@ class MyWindow(QMainWindow):
     def change_results(self):
         magnitude = np.random.uniform(0,1,20)
         confidence = np.random.uniform(0,1,20)
+        confidence = np.ones(20) * 0.9
+        confidence[np.asarray([8,9,10,13])] = 0.1
+
+        magnitude = np.ones(20) * 0.1
+        magnitude[18] = 0.9
+        tic = time.perf_counter()
         self.canvas.change_results(magnitude, confidence)
+        toc = time.perf_counter()
+        print(toc - tic)
 
 if __name__ == '__main__':
 
     gui = QtWidgets.QApplication(sys.argv)
     w = MyWindow()
     sys.exit(gui.exec())
-
 
     # config_file_path = '../config/config_default.ini'
     # config_ini = read_config_file(config_file_path)

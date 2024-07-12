@@ -71,12 +71,26 @@ class CellContent:
         color_rgb = Color(self._hsv_to_rgb(self._results_to_hsv(self.magnitude, self.confidence))).rgb
         self.magnitude_circle.color = color_rgb
 
+    # def _results_to_hsv(self, magnitude, confidence):
+    #     blue_hue = 240
+    #     red_hue = 0
+    #     hue = blue_hue + ((red_hue - blue_hue) % 360) * magnitude
+    #     saturation = confidence ** 2
+    #     value = confidence ** 2
+    #     return hue, saturation, value
+
     def _results_to_hsv(self, magnitude, confidence):
-        blue_hue = 240
+        # blue_hue = 240
+        # red_hue = 0
+        # hue = blue_hue + ((red_hue - blue_hue) % 360) * magnitude
+        # saturation = confidence ** 2
+        # value = confidence ** 2
+
+        green_hue = 120
         red_hue = 0
-        hue = blue_hue + ((red_hue - blue_hue) % 360) * magnitude
-        saturation = confidence ** 2
-        value = confidence ** 2
+        hue = green_hue - ((green_hue - red_hue) % 360) * magnitude
+        saturation = 1
+        value = confidence
         return hue, saturation, value
 
     def _hsv_to_rgb(self, hsv):
@@ -115,7 +129,7 @@ class ResultsSummaryCanvasWrapper:
         self.draw_grid()
 
         self.em.register_handler('update config.processor.channels', self._handler_update_channels)
-        # self.em.register_handler('update config.processor.channels', self._cell_set_visible)
+
         self.em.register_handler('update config.processor.channels_bad', self._cell_set_visible)
 
         self.resize_timer = QTimer()
