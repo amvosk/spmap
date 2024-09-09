@@ -4,7 +4,7 @@ import numpy as np
 import scipy.signal as sg
 sys.path.insert(0, '../utils/')
 
-from filters import NotchFilterRealtime, ButterFilterRealtime, Downsampler
+from filters import NotchFilterRealtime, ButterFilterRealtime, DownsamplerRealtime
 
 # from recorder import Recorder
 
@@ -149,7 +149,7 @@ class Processor:
             order=4,
         )
 
-        self.filter_downsample = Downsampler(self.config.processor.fs, self.config.visualizer.fs_downsample)
+        self.filter_downsample = DownsamplerRealtime(self.config.processor.fs, self.config.visualizer.fs_downsample)
         self.spectrum = FFT(
             self.config.visualizer.spec_window_size,
             self.config.visualizer.spec_ecog_low,

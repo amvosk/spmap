@@ -14,8 +14,6 @@ from functools import partial
 from PIL import Image
 
 
-
-
 class PicturesCanvas:
 
     def __init__(self, em, config):
@@ -46,7 +44,7 @@ class PicturesCanvas:
         self.em.register_handler('experiment.resume', lambda _: self.show_transition_picture('resume'))
         self.em.register_handler('experiment.blank', lambda _: self.show_transition_picture('blank'))
         self.em.register_handler('experiment.stimulus_image', self.show_collection_picture)
-        # self.em.register_handler('experiment.blank', self.show_transition_picture)
+
 
     def show_transition_picture(self, data):
         image_path = 'assets/transitions/{}.jpg'.format(data)

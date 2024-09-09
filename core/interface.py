@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from PyQt6.QtWidgets import QDialog,  QToolBar
+from PyQt6.QtWidgets import QDialog,  QToolBar, QSizePolicy
 from PyQt6.QtGui import QAction, QIcon
 
 from vispy import scene
@@ -46,6 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stimulus = Stimulus(self.config, self.em)
         self.generator_lsl = GeneratorLSL(self.config, self.em)
         self.record_lsl = RecordLSL(self.config, self.em)
+        self.record_lsl.queue = self.experiment.queue
 
         self.timer_connect = QtCore.QTimer(self) 
         self.timer_experiment = None
@@ -59,8 +60,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas_pictures = PicturesCanvas(self.em, self.config)
         self.sound = SoundCanvas(self.em, self.config)
         self.canvas_results_summary = ResultsSummaryCanvasWrapper(self.em, self.config)
-        self.canvas_results_raster = scene.SceneCanvas(keys='interactive')
-        self.view_results_raster = self.canvas_results_raster.central_widget.add_view()
+        self.canvas_results_decoder = ResultsSummaryCanvasWrapper(self.em, self.config)
+        # self.canvas_results_decoder = scene.SceneCanvas(keys='interactive')
+        # self.view_results_raster = self.canvas_results_decoder.central_widget.add_view()
 
         layout_brain = QtWidgets.QHBoxLayout()
         layout_brain.setContentsMargins(0,0,0,0) ### Clean?
@@ -95,7 +97,7 @@ class MainWindow(QtWidgets.QMainWindow):
         widget_splitter_images = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
         widget_results = QtWidgets.QTabWidget()
         widget_results.addTab(self.canvas_results_summary.canvas.native, "Summary")
-        widget_results.addTab(self.canvas_results_raster.native, "Decoder")
+        widget_results.addTab(self.canvas_results_decoder.canvas.native, "Decoder")
         widget_splitter_images.addWidget(self.canvas_pictures.canvas.native)
         widget_splitter_images.addWidget(widget_results)
         part_pictures = int(widget_splitter_images.size().height() * 0.4)
@@ -133,11 +135,18 @@ class MainWindow(QtWidgets.QMainWindow):
         header = QtWidgets.QWidget()
         header.setLayout(header_layout)
         header.setStyleSheet("background-color:black")
+
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        header.setSizePolicy(sizePolicy)
+
+        # header.setVerticalPolicy(0)#QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         # Добавляем вертикальный отступ между логотипом и заголовком
         #header_layout.addItem(QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
 
         # Создаем вертикальный макет для body
         body_layout = QtWidgets.QVBoxLayout()
+        # for k, v in vars(QtWidgets.QSizePolicy).items():
+        #     print(k, v)
         body = QtWidgets.QWidget()
         body.setLayout(body_layout)
         # Добавляем макет заголовка в body_layout
@@ -486,7 +495,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def receiver_dialog(self):
         receiver_window = ReceiverWindow(
-            self.config, self.em, self.receiver, self.generator_lsl, self.record_lsl,
+            self.config, self.em, self.receiver, self.generator_lsl, self.record_lsl, self.experiment,
             self.processor, self.timeseries, self.sound, self.timer_connect,self.control_widget)
         #receiver_window.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
         receiver_window.exec()
@@ -1248,7 +1257,7 @@ class PatientWindow(QtWidgets.QDialog):
 
 
 class ReceiverWindow(QtWidgets.QDialog):
-    def __init__(self, config, em, receiver, generator_lsl, record_lsl, processor, timeseries, sound, timer_connect, control_widget):
+    def __init__(self, config, em, receiver, generator_lsl, record_lsl, experiment, processor, timeseries, sound, timer_connect, control_widget):
         super().__init__()
         self.setWindowTitle("LSL Settings")
         self.config = config
@@ -1259,6 +1268,7 @@ class ReceiverWindow(QtWidgets.QDialog):
         self.sound = sound
         self.generator_lsl = generator_lsl
         self.record_lsl = record_lsl
+        self.experiment = experiment
         self.timer_connect = timer_connect  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         self.control_widget = control_widget
@@ -1394,11 +1404,24 @@ class ReceiverWindow(QtWidgets.QDialog):
             print("connect")
             self.em.trigger('receiver.connect')
 
+            # from eloq_server import callback_patient, callback_start, PatientData
+            # patient_data = PatientData(
+            #     name='test_subject',
+            #     birthDate='01.01.0001',
+            #     hospital='Princeton-Plainsboro',
+            #     historyID='Unknown',
+            #     hospitalizationDate='01.01.2001',
+            # )
+            # callback_patient(self.experiment.queue, patient_data)
+            # callback_start(self.experiment.queue, None)
+
             self.timer_connect.timeout.connect(
                 partial(self.processor.on_timer, self.timeseries.update_data, self.sound.update_data)
             )
             self.timer_connect.start(30)
         else:
+            from eloq_server import callback_finish
+
             self.control_widget.get_start_icon().setIcon(QIcon("../resource/icons/start.svg"))
             button.setStyleSheet("")
             for i in range(layout.count()):
@@ -1409,6 +1432,8 @@ class ReceiverWindow(QtWidgets.QDialog):
                     widget.setDisabled(True)
                 elif widget.objectName() == 'button_generator_lsl' and self.button_generator_lsl_locked:
                     widget.setDisabled(True)
+
+            callback_finish(self.experiment.queue, None)
 
             self.timer_connect.stop()
             print("terminate")

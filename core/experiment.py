@@ -20,11 +20,11 @@ class Experiment:
         self.config = config
         self.em = em
         self.process = None
-        self.queue_input = multiprocessing.Queue()
+        self.queue = multiprocessing.Queue()
         # self.connection_status = False
 
         self.timer = QtCore.QTimer(qt)
-        self.timer.timeout.connect(lambda: self.parse_message(self.queue_input))
+        self.timer.timeout.connect(lambda: self.parse_message(self.queue))
         self.timer.start(1)
 
     def parse_message(self, queue):
@@ -57,10 +57,10 @@ class Experiment:
 
     def start(self):
         try:
-            self.queue_input = multiprocessing.Queue()
+            self.queue = multiprocessing.Queue()
             self.process = multiprocessing.Process(
                 target=run_server,
-                args=(self.queue_input,)
+                args=(self.queue,)
             )
             # self.process.daemon = True
             self.process.start()
@@ -79,7 +79,9 @@ class Experiment:
             if self.process.is_alive():
                 self.process.terminate()
         self.process = None
-        self.queue_input = multiprocessing.Queue()
+        while not self.queue.empty():
+            self.queue.get()
+        # self.queue_input = multiprocessing.Queue()
 
 
 

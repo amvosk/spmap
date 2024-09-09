@@ -286,7 +286,6 @@ for i, DataClass in enumerate(data_classes):
     setattr(DataClass, 'set_events_handlers', method_)
 
 
-
 def read_config_file(path='config.ini'):
     config = configparser.ConfigParser()
     config.read(path)
@@ -403,12 +402,10 @@ def parse_config(em, config):
     ]
     channel_index = np.asarray(channel_index, dtype=int)
     channels_bad = np.zeros(n_channels, dtype=bool)
-    # print(channels_bad)
     channel_names = ['channel_{}'.format(i + 1) for i in range(n_channels)]
     channel_names += ['sound', 'timestamp', 'stimulus']
     dataset_width = len(channel_names)
 
-    # print(n_channels)
     processor_config = ProcessorConfig(
         channels=channels,
         n_channels=n_channels,

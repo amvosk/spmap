@@ -4,10 +4,81 @@ from fastapi import Depends, FastAPI, WebSocket, status, Header
 import uvicorn
 
 from pydantic import BaseModel
-from eloq_server import settings, speech_mapping_handler
-from eloq_server import EXAMINATION_HANDLERS, Message, BaseHandler
-
+from eloq_server import settings
+from eloq_server import Message, BaseHandler
+from functools import partial
 # from eloq_server.src import examinations
+
+
+SPEECH_MAPPING_CMD_START = "START"  # "Mapping" button pressed
+SPEECH_MAPPING_CMD_FINISH = "FINISH"  # "<" back arrow pressed
+SPEECH_MAPPING_CMD_PAUSE = "PAUSE"  # "paused" or collection ended
+SPEECH_MAPPING_CMD_RESUME = "RESUME"  # "unpaused" or "Restart" clicked
+SPEECH_MAPPING_CMD_IMAGE = "IMAGE"  # image was shown
+SPEECH_MAPPING_CMD_BLINK = "BLINK"  # blink screen was shown
+SPEECH_MAPPING_CMD_PATIENT = "PATIENT"
+
+
+class ControlData(BaseModel):
+    signal: str
+
+class BlankData(BaseModel):
+    signal: str
+
+class BlinkData(BaseModel):
+    duration: float
+
+    def __repr__(self):
+        return "BlinkData(duration={})".format(self.duration)
+
+class ImageData(BaseModel):
+    collection_name: str
+    image_name: str
+    duration: int
+
+    def __repr__(self):
+        return "ImageData(collection_name='{}', image_name='{}', duration={})".format(self.collection_name,
+                                                                                      self.image_name, self.duration)
+class PatientData(BaseModel):
+    name: str
+    birthDate: str
+    hospital: str
+    historyID: str
+    hospitalizationDate: str
+
+    def __repr__(self):
+        return "PatientData(name ='{}', birthDate='{}', hospital='{}',historyID = '{}',hospitalizationDate = '{}')".format(
+            self.name, self.birthDate, self.hospital, self.historyID, self.hospitalizationDate)
+
+
+class SpeechMappingHandler(BaseHandler):
+    CMDS = {
+        SPEECH_MAPPING_CMD_START,
+        SPEECH_MAPPING_CMD_FINISH,
+        SPEECH_MAPPING_CMD_PAUSE,
+        SPEECH_MAPPING_CMD_RESUME,
+        SPEECH_MAPPING_CMD_IMAGE,
+        SPEECH_MAPPING_CMD_BLINK,
+        SPEECH_MAPPING_CMD_PATIENT,
+    }
+
+    def _parse_request_body(self, msg: Message) -> Union[ImageData, BlinkData, PatientData, None]:
+        if msg.action == SPEECH_MAPPING_CMD_IMAGE:
+            return ImageData.model_validate(msg.data)
+
+        if msg.action == SPEECH_MAPPING_CMD_BLINK:
+            return BlinkData.model_validate(msg.data)
+
+        if msg.action == SPEECH_MAPPING_CMD_PATIENT:
+            return PatientData.model_validate(msg.data)
+
+        return None
+
+EXAMINATION_HANDLERS = {
+    "speech_mapping": SpeechMappingHandler,
+}
+
+
 
 def create_app(callbacks: Mapping[str, Callable[[Message], Optional[Any]]], eloq_examination_type: str):
     if eloq_examination_type not in EXAMINATION_HANDLERS.keys():
@@ -47,55 +118,51 @@ def create_app(callbacks: Mapping[str, Callable[[Message], Optional[Any]]], eloq
     return app
 
 
-class ControlData(BaseModel):
-    signal: str
 
-class BlankData(BaseModel):
-    signal: str
+def callback_patient(queue, data: PatientData):
+    print("PatientData event received")
+    queue.put(data)
+
+def callback_image(queue, data: ImageData):
+    print("ImageData event received")
+    queue.put(data)
+
+def callback_blink(queue, data: BlinkData):
+    print("BLINK event received")
+    data = BlankData(signal='BLINK')
+    queue.put(data)
+
+def callback_start(queue, data: None):
+    print("START event received")
+    data = ControlData(signal='START')
+    queue.put(data)
+
+def callback_finish(queue, data: None):
+    print("FINISH event received.")
+    data = ControlData(signal='FINISH')
+    queue.put(data)
+
+def callback_pause(queue, data: None):
+    print("PAUSE event received")
+    data = ControlData(signal='PAUSE')
+    queue.put(data)
+
+def callback_resume(queue, data: None):
+    print("RESUME event received")
+    data = ControlData(signal='RESUME')
+    queue.put(data)
+
 
 
 def run_server(queue):
-    def callback_image(data: speech_mapping_handler.ImageData):
-        # print(f"IMAGE event received with data {repr(data)}.")
-        queue.put(data)
-
-    def callback_pause(data: None):
-        # print("PAUSE event received")
-        data = ControlData(signal='PAUSE')
-        queue.put(data)
-
-    def callback_blink(data: speech_mapping_handler.BlinkData):
-        # queue.put("blink")
-        data = BlankData(signal='BLINK')
-        queue.put(data)
-        # print(f"BLINK event received with data {repr(data)}.")
-
-    def callback_finish(data: None):
-        data = ControlData(signal='FINISH')
-        # print("FINISH event received. Sending all data to the mobile app.")
-        queue.put(data)
-
-    def callback_resume(data: None):
-        # print("RESUME event received")
-        data = ControlData(signal='RESUME')
-        queue.put(data)
-
-    def callback_start(data: None):
-        # print("START event received")
-        data = ControlData(signal='START')
-        queue.put(data)
-
-    def callback_patient(data: speech_mapping_handler.PatientData):
-        queue.put(data)
-
     callbacks = {
-        speech_mapping_handler.SPEECH_MAPPING_CMD_START: callback_start,
-        speech_mapping_handler.SPEECH_MAPPING_CMD_FINISH: callback_finish,
-        speech_mapping_handler.SPEECH_MAPPING_CMD_PAUSE: callback_pause,
-        speech_mapping_handler.SPEECH_MAPPING_CMD_RESUME: callback_resume,
-        speech_mapping_handler.SPEECH_MAPPING_CMD_BLINK: callback_blink,
-        speech_mapping_handler.SPEECH_MAPPING_CMD_IMAGE: callback_image,
-        speech_mapping_handler.SPEECH_MAPPING_CMD_PATIENT: callback_patient,
+        SPEECH_MAPPING_CMD_START: partial(callback_start, queue),
+        SPEECH_MAPPING_CMD_FINISH: partial(callback_finish, queue),
+        SPEECH_MAPPING_CMD_PAUSE: partial(callback_pause, queue),
+        SPEECH_MAPPING_CMD_RESUME: partial(callback_resume, queue),
+        SPEECH_MAPPING_CMD_BLINK: partial(callback_blink, queue),
+        SPEECH_MAPPING_CMD_IMAGE: partial(callback_image, queue),
+        SPEECH_MAPPING_CMD_PATIENT: partial(callback_patient, queue),
     }
 
     # global app

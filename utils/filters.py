@@ -1,6 +1,7 @@
 
 import numpy as np
 import scipy.signal as sg
+import librosa
 
 
 class ButterFilterRealtime:
@@ -17,13 +18,37 @@ class ButterFilterRealtime:
         return chunk_filtered
 
 
-class Downsampler:
+class ButterFilter:
+    def __init__(self, freq, fs, btype, order=4):
+        self.sos = sg.butter(order, np.asarray(freq), btype=btype, output='sos', fs=fs)
+
+    def __call__(self, epoch):
+        epoch_filtered = sg.sosfilt(self.sos, epoch)
+        return epoch_filtered
+
+
+
+
+class DownsamplerRealtime:
     def __init__(self, fs, fs_downsample):
         self.downsample_coef = int(fs / fs_downsample)
 
     def __call__(self, chunk):
         chunk_downsampled = chunk[...,self.downsample_coef-1::self.downsample_coef]
         return chunk_downsampled
+
+
+class Downsampler:
+    def __init__(self, fs, fs_downsample, res_type='soxr_hq'):
+        self.fs = fs
+        self.fs_downsample = fs_downsample
+        self.res_type = res_type
+
+    def __call__(self, epoch):
+        epoch_downsampled = librosa.resample(epoch, orig_sr=self.fs, target_sr=self.fs_downsample, res_type=self.res_type)
+        return epoch_downsampled
+
+
 
 
 class NotchFilterRealtime:
@@ -43,3 +68,17 @@ class NotchFilterRealtime:
             self.zi = np.repeat(np.expand_dims(self.zi, axis=-2), repeats=chunk.shape[-2], axis=-2)
         chunk_filtered, self.zi = sg.sosfilt(self.sos, chunk, zi=self.zi)
         return chunk_filtered
+
+
+class NotchFilter:
+    def __init__(self, notch_freqs, Q, fs):
+        sos = []
+        for freq in notch_freqs:
+            b, a = sg.iirnotch(freq, freq / Q, fs)
+            sos.append(np.concatenate([b, a]))
+        self.sos = np.stack(sos)
+
+    def __call__(self, epoch):
+        epoch_filtered = sg.sosfiltfilt(self.sos, epoch)
+        return epoch_filtered
+

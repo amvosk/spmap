@@ -49,6 +49,7 @@ class Recorder:
     def run(self, args=None):
         if self.config.control.receiver_run:
             try:
+                self.event_finish = multiprocessing.Event()
                 self.process = multiprocessing.Process(
                     target=_recorder_run,
                     args=(copy.deepcopy(self.config), self.queue_input, self.event_pause, self.event_finish)
