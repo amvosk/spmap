@@ -23,7 +23,7 @@ class ButterFilter:
         self.sos = sg.butter(order, np.asarray(freq), btype=btype, output='sos', fs=fs)
 
     def __call__(self, epoch):
-        epoch_filtered = sg.sosfilt(self.sos, epoch)
+        epoch_filtered = sg.sosfiltfilt(self.sos, epoch)
         return epoch_filtered
 
 
@@ -82,3 +82,40 @@ class NotchFilter:
         epoch_filtered = sg.sosfiltfilt(self.sos, epoch)
         return epoch_filtered
 
+
+# class FFT:
+#     def __init__(self, spec_window_size, spec_low, spec_high, spec_decay, n_channels, fs):
+#         self.fft_exp_mean = np.ones(((spec_high - spec_low)*spec_window_size, n_channels))
+#         self.fft_buffer = np.zeros((spec_window_size * fs, n_channels))
+#         self.spec_window_size = spec_window_size
+#         self.hann = sg.windows.hann(spec_window_size * fs).reshape((-1,1))
+#         self.spec_low = spec_low
+#         self.spec_high = spec_high
+#         self.spec_decay = spec_decay
+#         self.counter = 0
+#         self.cutoff = 1 / spec_decay
+#         self.separator = 0
+#
+#     def __call__(self, chunk):
+#         if self.separator + chunk.shape[0] < self.fft_buffer.shape[0]:
+#             self.fft_buffer[self.separator:self.separator+chunk.shape[0]] = chunk
+#             self.separator += chunk.shape[0]
+#         elif self.separator + chunk.shape[0] == self.fft_buffer.shape[0]:
+#
+#             overshoot = self.separator + chunk.shape[0] - self.fft_buffer.shape[0]
+#             assert overshoot == 0, 'overshoot should be == 0'
+#
+#             fft_buffer_windowed = self.fft_buffer * self.hann
+#             fft = np.fft.rfft(fft_buffer_windowed, axis=0)
+#             fft_segment = np.abs(fft)[self.spec_low*self.spec_window_size:self.spec_high*self.spec_window_size]
+#             self.fft_buffer[:self.fft_buffer.shape[0]//2] = self.fft_buffer[self.fft_buffer.shape[0]//2:]
+#             self.separator = self.fft_buffer.shape[0] // 2
+#
+#             if self.counter < self.cutoff:
+#                 self.fft_exp_mean = (self.fft_exp_mean * self.counter + fft_segment) / (self.counter + 1)
+#             else:
+#                 self.fft_exp_mean = self.spec_decay * self.fft_exp_mean + (1-self.spec_decay) * fft_segment
+#             self.counter += 1
+#
+#         result = np.log(np.copy(self.fft_exp_mean) + 1e-7)
+#         return result

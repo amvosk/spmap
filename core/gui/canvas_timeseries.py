@@ -35,7 +35,7 @@ class TimeSeriesCanvas:
         self.camera = scene.PanZoomCamera(rect=rect_ecog, interactive=False)
         self.camera.padding = 0
 
-        self.view_types = ['ECoG', 'Spec', 'hgECoG', 'hgSpec', 'hgA']
+        self.view_types = ['ECoG', 'hgECoG', 'hgA']
 
         self.views = {}
         for view_type in self.view_types:
@@ -47,6 +47,8 @@ class TimeSeriesCanvas:
         self.em.register_handler('update config.visualizer parameters', self._draw_channels)
         self.em.register_handler('update config.processor.channels', self._draw_channels)
         self.em.register_handler('update config.processor.channels_bad', self._channels_set_visible)
+
+        self.em.register_handler('gui.canvas_timeseries.update_data', self.update_data)
 
         self.canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
 

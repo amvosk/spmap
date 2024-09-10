@@ -206,12 +206,12 @@ class VisualizerConfig:
     hg_ecog_bpfh: float
     log_transform: bool
     hg_ecog_sf: float
-    spec_ecog_low: int
-    spec_ecog_high: int
-    spec_hg_ecog_low: int
-    spec_hg_ecog_high: int
-    spec_window_size: int
-    spec_decay: float
+    # spec_ecog_low: int
+    # spec_ecog_high: int
+    # spec_hg_ecog_low: int
+    # spec_hg_ecog_high: int
+    # spec_window_size: int
+    # spec_decay: float
     ecog_notch: bool
     ecog_highpass_filter: bool
     ecog_lowpass_filter: bool
@@ -467,12 +467,12 @@ def parse_config(em, config):
     log_transform = config['visualizer'].getboolean('log_transform')
     hg_ecog_sf = config['visualizer'].getfloat('hg_ecog_sf')
 
-    spec_ecog_low = config['visualizer'].getint('spec_ecog_low')
-    spec_ecog_high = config['visualizer'].getint('spec_ecog_high')
-    spec_hg_ecog_low = config['visualizer'].getint('spec_hg_ecog_low')
-    spec_hg_ecog_high = config['visualizer'].getint('spec_hg_ecog_high')
-    spec_window_size = config['visualizer'].getint('spec_window_size')
-    spec_decay = config['visualizer'].getfloat('spec_decay')
+    # spec_ecog_low = config['visualizer'].getint('spec_ecog_low')
+    # spec_ecog_high = config['visualizer'].getint('spec_ecog_high')
+    # spec_hg_ecog_low = config['visualizer'].getint('spec_hg_ecog_low')
+    # spec_hg_ecog_high = config['visualizer'].getint('spec_hg_ecog_high')
+    # spec_window_size = config['visualizer'].getint('spec_window_size')
+    # spec_decay = config['visualizer'].getfloat('spec_decay')
 
     ecog_notch = config['visualizer'].getboolean('ecog_notch')
     ecog_highpass_filter = config['visualizer'].getboolean('ecog_highpass_filter')
@@ -494,12 +494,12 @@ def parse_config(em, config):
         hg_ecog_bpfh=hg_ecog_bpfh,
         log_transform=log_transform,
         hg_ecog_sf=hg_ecog_sf,
-        spec_ecog_low=spec_ecog_low,
-        spec_ecog_high=spec_ecog_high,
-        spec_hg_ecog_low=spec_hg_ecog_low,
-        spec_hg_ecog_high=spec_hg_ecog_high,
-        spec_window_size=spec_window_size,
-        spec_decay=spec_decay,
+        # spec_ecog_low=spec_ecog_low,
+        # spec_ecog_high=spec_ecog_high,
+        # spec_hg_ecog_low=spec_hg_ecog_low,
+        # spec_hg_ecog_high=spec_hg_ecog_high,
+        # spec_window_size=spec_window_size,
+        # spec_decay=spec_decay,
         ecog_notch=ecog_notch,
         ecog_highpass_filter=ecog_highpass_filter,
         ecog_lowpass_filter=ecog_lowpass_filter,

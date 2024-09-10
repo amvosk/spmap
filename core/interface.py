@@ -22,6 +22,8 @@ from recorder import Recorder
 from processor import Processor
 from experiment import Experiment
 from stimulus import Stimulus
+from decoder import Decoder
+from visualizer import Visualizer
 
 from vispy.app import use_app
 use_app('pyqt6')
@@ -42,8 +44,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.receiver = Receiver(self.config, self.em)
         self.recorder = Recorder(self.config, self.em)
         self.processor = Processor(self.config, self.em, self)
+        self.visualizer = Visualizer(self.config, self.em)
         self.experiment = Experiment(self.config, self.em, self)
         self.stimulus = Stimulus(self.config, self.em)
+        self.decoder = Decoder(self.config, self.em)
         self.generator_lsl = GeneratorLSL(self.config, self.em)
         self.record_lsl = RecordLSL(self.config, self.em)
         self.record_lsl.queue = self.experiment.queue
@@ -554,7 +558,7 @@ class VizualizerWindow(QtWidgets.QDialog):
         layout_visualization_settings.addWidget(widget_visualization_type)
 
         self.button_group_visualization_type = QtWidgets.QButtonGroup()
-        visualization_types = ["ECoG", "Spec", "hgECoG", "hgSpec", "hgA"]
+        visualization_types = ["ECoG", "hgECoG", "hgA"]
         for visualization_type in visualization_types:
             radio_button = QtWidgets.QRadioButton(visualization_type)
             radio_button.setObjectName(visualization_type)
@@ -700,37 +704,37 @@ class VisualizationParametersWindow(QtWidgets.QDialog):
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         layout_visualization_parameters_values.addWidget(separator)
 
-        layout_spectrum_naive_ecog = QtWidgets.QHBoxLayout()
-        field_spectrum_naive_ecog_low = QtWidgets.QLineEdit()
-        field_spectrum_naive_ecog_low.setFixedWidth(field_size // 2 - 3)
-        field_spectrum_naive_ecog_low.setText(str(self.config_visualization.spec_ecog_low))
-        field_spectrum_naive_ecog_high = QtWidgets.QLineEdit()
-        field_spectrum_naive_ecog_high.setFixedWidth(field_size // 2 - 3)
-        field_spectrum_naive_ecog_high.setText(str(self.config_visualization.spec_ecog_high))
-        layout_spectrum_naive_ecog.addWidget(field_spectrum_naive_ecog_low)
-        layout_spectrum_naive_ecog.addWidget(field_spectrum_naive_ecog_high)
-        layout_visualization_parameters_values.addRow("Spectrum freq ECoG", layout_spectrum_naive_ecog)
+        # layout_spectrum_naive_ecog = QtWidgets.QHBoxLayout()
+        # field_spectrum_naive_ecog_low = QtWidgets.QLineEdit()
+        # field_spectrum_naive_ecog_low.setFixedWidth(field_size // 2 - 3)
+        # field_spectrum_naive_ecog_low.setText(str(self.config_visualization.spec_ecog_low))
+        # field_spectrum_naive_ecog_high = QtWidgets.QLineEdit()
+        # field_spectrum_naive_ecog_high.setFixedWidth(field_size // 2 - 3)
+        # field_spectrum_naive_ecog_high.setText(str(self.config_visualization.spec_ecog_high))
+        # layout_spectrum_naive_ecog.addWidget(field_spectrum_naive_ecog_low)
+        # layout_spectrum_naive_ecog.addWidget(field_spectrum_naive_ecog_high)
+        # layout_visualization_parameters_values.addRow("Spectrum freq ECoG", layout_spectrum_naive_ecog)
+        #
+        # layout_spectrum_hg_ecog = QtWidgets.QHBoxLayout()
+        # field_spectrum_hg_ecog_low = QtWidgets.QLineEdit()
+        # field_spectrum_hg_ecog_low.setFixedWidth(field_size // 2 - 3)
+        # field_spectrum_hg_ecog_low.setText(str(self.config_visualization.spec_hg_ecog_low))
+        # field_spectrum_hg_ecog_high = QtWidgets.QLineEdit()
+        # field_spectrum_hg_ecog_high.setFixedWidth(field_size // 2 - 3)
+        # field_spectrum_hg_ecog_high.setText(str(self.config_visualization.spec_hg_ecog_high))
+        # layout_spectrum_hg_ecog.addWidget(field_spectrum_hg_ecog_low)
+        # layout_spectrum_hg_ecog.addWidget(field_spectrum_hg_ecog_high)
+        # layout_visualization_parameters_values.addRow("Spectrum freq hgECoG", layout_spectrum_hg_ecog)
 
-        layout_spectrum_hg_ecog = QtWidgets.QHBoxLayout()
-        field_spectrum_hg_ecog_low = QtWidgets.QLineEdit()
-        field_spectrum_hg_ecog_low.setFixedWidth(field_size // 2 - 3)
-        field_spectrum_hg_ecog_low.setText(str(self.config_visualization.spec_hg_ecog_low))
-        field_spectrum_hg_ecog_high = QtWidgets.QLineEdit()
-        field_spectrum_hg_ecog_high.setFixedWidth(field_size // 2 - 3)
-        field_spectrum_hg_ecog_high.setText(str(self.config_visualization.spec_hg_ecog_high))
-        layout_spectrum_hg_ecog.addWidget(field_spectrum_hg_ecog_low)
-        layout_spectrum_hg_ecog.addWidget(field_spectrum_hg_ecog_high)
-        layout_visualization_parameters_values.addRow("Spectrum freq hgECoG", layout_spectrum_hg_ecog)
-
-        field_spectrum_exp_decay = QtWidgets.QLineEdit()
-        field_spectrum_exp_decay.setFixedWidth(field_size)
-        field_spectrum_exp_decay.setText(str(self.config_visualization.spec_decay))
-        layout_visualization_parameters_values.addRow("Spectrum decay", field_spectrum_exp_decay)
-
-        field_spectrum_window_size = QtWidgets.QLineEdit()
-        field_spectrum_window_size.setFixedWidth(field_size)
-        field_spectrum_window_size.setText(str(self.config_visualization.spec_window_size))
-        layout_visualization_parameters_values.addRow("Spectrum window, sec", field_spectrum_window_size)
+        # field_spectrum_exp_decay = QtWidgets.QLineEdit()
+        # field_spectrum_exp_decay.setFixedWidth(field_size)
+        # field_spectrum_exp_decay.setText(str(self.config_visualization.spec_decay))
+        # layout_visualization_parameters_values.addRow("Spectrum decay", field_spectrum_exp_decay)
+        #
+        # field_spectrum_window_size = QtWidgets.QLineEdit()
+        # field_spectrum_window_size.setFixedWidth(field_size)
+        # field_spectrum_window_size.setText(str(self.config_visualization.spec_window_size))
+        # layout_visualization_parameters_values.addRow("Spectrum window, sec", field_spectrum_window_size)
 
         widget_out_buttons = self.create_widget_out_buttons()
         layout_visualization_parameters_window.addWidget(widget_out_buttons)
@@ -1415,9 +1419,7 @@ class ReceiverWindow(QtWidgets.QDialog):
             # callback_patient(self.experiment.queue, patient_data)
             # callback_start(self.experiment.queue, None)
 
-            self.timer_connect.timeout.connect(
-                partial(self.processor.on_timer, self.timeseries.update_data, self.sound.update_data)
-            )
+            self.timer_connect.timeout.connect(self.processor.on_timer)
             self.timer_connect.start(30)
         else:
             from eloq_server import callback_finish

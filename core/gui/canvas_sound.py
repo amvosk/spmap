@@ -40,6 +40,8 @@ class SoundCanvas:
         self.em.register_handler('update config.visualizer.n_samples_plot_sound', self._update_parametes)
         self.canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
 
+        self.em.register_handler('gui.canvas_sound.update_data', self.update_data)
+
 
     def _update_parametes(self, args):
         self.n_samples = self.config.visualizer.n_samples_plot_sound
