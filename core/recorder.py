@@ -38,8 +38,7 @@ class Recorder:
         self.em.register_handler('experiment.finish', lambda _: self.event_finish.set())
         self.em.register_handler('experiment.pause', lambda _: self.event_pause.set())
         self.em.register_handler('experiment.resume', lambda _: self.event_pause.clear())
-        self.em.register_handler('processor.chunk_record', self.record_chunk)
-
+        self.em.register_handler('recorder.chunk_record', self.record_chunk)
 
     def record_chunk(self, chunk):
         if self.config.control.recorder_run:
@@ -77,7 +76,8 @@ class Recorder:
             self.queue_input.get()
         self.event_finish.clear()
         self.event_pause.clear()
-        self.em.trigger('update config.control.recorder_run', True)
+        # self.em.trigger('update config.control.recorder_run', True) ### IS IT A BUG?
+        self.em.trigger('update config.control.recorder_run', False)  ### IS IT A BUG?
 
         # while not self.queue_output.empty():
         #     self.queue_output.get()
